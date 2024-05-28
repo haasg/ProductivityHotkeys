@@ -1,5 +1,6 @@
 alias home='cd ~'
-alias pp='cd C:\Users\blahb\Documents\UnityProjects\PixelPilot'
+alias pp='cd C:\\Users\\blahb\\Documents\\UnityProjects\\PixelPilot'
+alias ion='cd C:\\Users\\blahb\\Documents\\Unreal\ Projects\\Ion'
 alias alias-open='code ~/.bashrc'
 alias alias-save='source ~/.bashrc'
 alias gsave='git add .; git commit -m save; git push'
