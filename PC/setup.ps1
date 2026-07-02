@@ -51,7 +51,7 @@ if (-not (Test-Path $nvimDir)) {
 # ── 5. overlay configs from this repo ───────────────────────
 # nvim: lazyvim.json (enables lang.rust extra) + plugin/option files
 Copy-Item "$here\nvim\lazyvim.json" $nvimDir -Force
-Copy-Item "$here\nvim\lua\config\options.lua" "$nvimDir\lua\config\" -Force
+Copy-Item "$here\nvim\lua\config\*.lua" "$nvimDir\lua\config\" -Force
 New-Item -ItemType Directory -Force "$nvimDir\lua\plugins" | Out-Null
 Copy-Item "$here\nvim\lua\plugins\*.lua" "$nvimDir\lua\plugins\" -Force
 

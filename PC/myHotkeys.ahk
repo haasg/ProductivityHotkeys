@@ -54,6 +54,10 @@ return
 Send, {PgDn down}{PgDn up}
 return
 
+; Inside WezTerm, Ctrl+j/k/l/i must reach the terminal untouched: Ctrl-h/j/k/l
+; is the universal pane/split navigation layer (see WORKFLOW.md). Everywhere
+; else they stay word-jumps / 6-line hops.
+#IfWinNotActive ahk_exe wezterm-gui.exe
 ^j::
 Send, {Ctrl down}{Left down}{Left up}{Ctrl up}
 return
@@ -69,6 +73,7 @@ return
 ^i::
 Send, {Up down}{Up up}{Up down}{Up up}{Up down}{Up up}{Up down}{Up up}{Up down}{Up up}{Up down}{Up up}
 return
+#IfWinNotActive
 
 !^j::
 Send, {Left down}{Left up}

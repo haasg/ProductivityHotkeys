@@ -8,13 +8,19 @@ To reproduce on a new Windows machine: run `PC/setup.ps1`, then read this file.
 
 ## Architecture
 
-Three keybinding layers, no collisions:
+Four keybinding layers, no collisions:
 
 | Layer | Prefix | Role |
 |---|---|---|
+| AutoHotkey (Windows-global) | `Alt` | `Alt+j/k/i/l` = arrows, `Alt+u/o` = Home/End, `Alt+h/n` = PgUp/PgDn — in every app, including Neovim |
 | WezTerm (multiplexer) | `Ctrl-a` (leader) | Workspaces, tabs, splits |
 | Neovim (LazyVim) | `Space` | Editing, LSP, git review |
 | Universal navigation | `Ctrl-h/j/k/l` | Move across vim splits AND WezTerm panes as one grid |
+
+The AHK `Ctrl+j/k/l/i` variants (word-jump / 6-line hop) are disabled inside
+WezTerm (`#IfWinNotActive` guard in myHotkeys.ahk) so they can't shadow the
+universal navigation layer. Inside the terminal, use real `Ctrl+←/→` for
+word-jumps instead.
 
 Core pattern: **one git worktree = one WezTerm workspace = one agent.**
 Tab 1 = Neovim, Tab 2 = Claude Code, Tab 3 = shell/lazygit.
@@ -32,7 +38,7 @@ natively there). WSL2 was rejected: the Rust/game toolchain needs native Windows
 | `s` | fuzzy-pick workspace |
 | `w` | new named workspace |
 | `c` / `n` / `p` / `1-8` | new tab / next / prev / jump to tab |
-| `\|` / `-` | split right / split down |
+| `\` / `-` | split right / split down (`\|` also works for split right) |
 | `x` / `z` | close pane / zoom pane |
 
 `Ctrl-h/j/k/l` moves between panes — and between vim splits when the pane is
@@ -45,10 +51,29 @@ running nvim (smart-splits.nvim sets an `IS_NVIM` user var; wezterm.lua checks i
 | `<space><space>` | find files |
 | `<space>/` | live grep |
 | `gd` | go to definition |
-| `<space>gd` | diffview: working tree changes (`]f`/`[f` cycle files) |
+| `<space>gd` | diffview: working tree changes (`Tab`/`S-Tab` cycle files, `]c`/`[c` jump hunks) |
 | `<space>gD` | diffview: whole branch vs main |
 | `<space>gh` | file history for current file |
 | `<space>gg` | lazygit floating window |
+
+**Neovim editing, Windows-style (no vim-golf required)**
+
+The AHK Alt-layer plus `config/keymaps.lua` means Neovim edits like a normal
+Windows app. Live in insert mode; pop to normal mode (`Esc`) only for the
+Space menu.
+
+| Key | Action |
+|---|---|
+| `i` / `Esc` | start / stop typing (insert ↔ normal mode) |
+| `Alt+j/k/i/l` | move cursor (works in any mode — they're real arrows) |
+| `Alt+Shift+j/k/i/l` | select text, Windows-style |
+| `Alt+c` / `Alt+v` / `Ctrl+X` | copy / paste / cut (system clipboard) |
+| `Ctrl+S` | save, even from insert mode |
+| `Ctrl+Z` / `Ctrl+Y` | undo / redo, even from insert mode |
+| `Ctrl+←/→` | jump by word |
+
+Caveats: `Alt+a` (select-all) is dead in the terminal — `Ctrl+A` is the WezTerm
+leader. In a shell/Claude pane, `Alt+c` is `Ctrl+C` = interrupt, not copy.
 
 **Shell / git**
 
@@ -61,6 +86,8 @@ running nvim (smart-splits.nvim sets an `IS_NVIM` user var; wezterm.lua checks i
 1. `Ctrl-a s` → pick workspace (or `Ctrl-a w` → create one per worktree/agent)
 2. Tab 1: `nvim` — navigate, read, edit
 3. Tab 2: Claude Code running against that worktree
+   (or side-by-side: `Ctrl-a \` splits, run `claude` in the new pane,
+   `Ctrl-h`/`Ctrl-l` hop between vim and Claude, `Ctrl-a z` zooms one pane)
 4. Review: `<space>gD` for the branch diff tree, or `<space>gg` to stage
    hunk-by-hunk and commit; `git dft` when formatting churn drowns the diff
 5. `gh pr create` when the branch is ready
@@ -72,6 +99,8 @@ running nvim (smart-splits.nvim sets an `IS_NVIM` user var; wezterm.lua checks i
 | `PC/wezterm.lua` | `~/.wezterm.lua` | terminal + multiplexer keys + appearance |
 | `PC/nvim/lazyvim.json` | `%LOCALAPPDATA%\nvim\` | enables the `lang.rust` LazyVim extra |
 | `PC/nvim/lua/config/options.lua` | `%LOCALAPPDATA%\nvim\lua\config\` | PATH fixes (see troubleshooting) |
+| `PC/nvim/lua/config/keymaps.lua` | `%LOCALAPPDATA%\nvim\lua\config\` | Windows-style select/copy/paste/undo (pairs with AHK Alt-layer) |
+| `PC/myHotkeys.ahk` | run at startup with AutoHotkey v1 | global Alt-layer arrows; Ctrl-variants disabled inside WezTerm |
 | `PC/nvim/lua/plugins/rust.lua` | `...\lua\plugins\` | rust-analyzer: clippy on check, not allFeatures |
 | `PC/nvim/lua/plugins/diffview.lua` | `...\lua\plugins\` | branch review keymaps |
 | `PC/nvim/lua/plugins/smart-splits.lua` | `...\lua\plugins\` | nvim half of unified Ctrl-h/j/k/l |

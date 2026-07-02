@@ -56,6 +56,11 @@ config.keys = {
   { key = '[', mods = 'ALT', action = act.ActivateTabRelative(-1) },
   { key = ']', mods = 'ALT', action = act.ActivateTabRelative(1) },
   -- Splits
+  -- Split right lives on the \ key. Primary chord is unshifted \ because this
+  -- wezterm build is unreliable at matching shifted punctuation after a leader;
+  -- both '|' forms are registered too (wezterm's own defaults do the same).
+  { key = '\\', mods = 'LEADER', action = act.SplitHorizontal({ domain = 'CurrentPaneDomain' }) },
+  { key = '|', mods = 'LEADER', action = act.SplitHorizontal({ domain = 'CurrentPaneDomain' }) },
   { key = '|', mods = 'LEADER|SHIFT', action = act.SplitHorizontal({ domain = 'CurrentPaneDomain' }) },
   { key = '-', mods = 'LEADER', action = act.SplitVertical({ domain = 'CurrentPaneDomain' }) },
   { key = 'x', mods = 'LEADER', action = act.CloseCurrentPane({ confirm = true }) },
