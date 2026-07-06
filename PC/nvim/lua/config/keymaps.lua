@@ -25,6 +25,16 @@ map("s", "<C-v>", "<C-o>P", { desc = "Paste over selection" })
 map("i", "<C-v>", "<C-r><C-o>+", { desc = "Paste" })
 map("n", "<C-v>", '"+P', { desc = "Paste (visual block moved to Ctrl+Q)" })
 
+-- Jump back through the jump history, e.g. after gd/gr dives. The built-in is
+-- Ctrl+O, but the AHK layer turns that into End globally. Reaching nvim as a
+-- distinct key needs the kitty keyboard protocol (enabled in wezterm.lua).
+map("n", "<C-=>", "<C-o>", { desc = "Jump back" })
+
+-- Previous / next open file (bufferline strip), matching the AHK j=left/l=right
+-- scheme. Shadows vim's J (join lines) and L (jump to bottom of screen).
+map("n", "J", "<cmd>bprevious<cr>", { desc = "Prev buffer" })
+map("n", "L", "<cmd>bnext<cr>", { desc = "Next buffer" })
+
 -- Undo / redo without having to know about normal mode
 map("i", "<C-z>", "<C-o>u", { desc = "Undo" })
 map("n", "<C-z>", "u", { desc = "Undo" })

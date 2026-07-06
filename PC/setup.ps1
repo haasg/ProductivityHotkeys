@@ -59,6 +59,16 @@ Copy-WithBackup "$here\wezterm.lua" "$env:USERPROFILE\.wezterm.lua"
 Copy-WithBackup "$here\lazygit-config.yml" "$env:LOCALAPPDATA\lazygit\config.yml"
 Copy-WithBackup "$here\powershell-profile.ps1" "$env:USERPROFILE\Documents\PowerShell\Microsoft.PowerShell_profile.ps1"
 
+# Claude Code statusLine (repo root, shared with Mac). Copy the script, then
+# make sure settings.json points its statusLine at it.
+$claudeDir = "$env:USERPROFILE\.claude"
+Copy-Item "$here\..\statusline.py" "$claudeDir\statusline.py" -Force
+$settingsPath = "$claudeDir\settings.json"
+$settings = if (Test-Path $settingsPath) { Get-Content $settingsPath -Raw | ConvertFrom-Json } else { [pscustomobject]@{} }
+$statusLine = [pscustomobject]@{ type = "command"; command = "python `"$claudeDir\statusline.py`"" }
+$settings | Add-Member -NotePropertyName statusLine -NotePropertyValue $statusLine -Force
+$settings | ConvertTo-Json -Depth 10 | Set-Content $settingsPath -Encoding utf8
+
 # ── 6. bootstrap nvim plugins ───────────────────────────────
 # First headless run can hit a benign "Package is already installing" race on
 # tree-sitter-cli; the second run completes it. Parsers/mason tools finish

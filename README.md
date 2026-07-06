@@ -25,6 +25,7 @@ Two things live here:
 | `Mac/init.lua` | Hammerspoon config — JKIL cursor movement on macOS |
 | `Mac/terminal-shortcuts` | zsh aliases (`~/.zshrc`) |
 | `notify.sh` | terminal-notifier hook so Codex CLI pings when a task finishes |
+| `statusline.py` | Claude Code statusLine — context tokens, model, git branch (cross-platform) |
 
 ## Windows setup
 
@@ -40,6 +41,9 @@ Two things live here:
 
 3. **Aliases** — append `PC/terminal-shortcuts` to `~/.bashrc` (Git Bash).
 
+   `setup.ps1` also installs the Claude Code statusLine: it copies `statusline.py`
+   to `~/.claude/statusline.py` and points `settings.json`'s `statusLine` at it.
+
 ## Mac setup
 
 1. **Hotkeys** — `brew install --cask hammerspoon`, then copy `Mac/init.lua` to
@@ -52,7 +56,14 @@ Two things live here:
 
 4. **Terminal** — iTerm2 setup: https://catalins.tech/improve-mac-terminal/
 
-5. **Dev workflow** — not ported yet; the plan is **tmux** as the multiplexer on
+5. **Claude Code statusLine** — copy `statusline.py` to `~/.claude/statusline.py`,
+   then add this to `~/.claude/settings.json` (use `python3` on Mac):
+
+   ```json
+   "statusLine": { "type": "command", "command": "python3 ~/.claude/statusline.py" }
+   ```
+
+6. **Dev workflow** — not ported yet; the plan is **tmux** as the multiplexer on
    Mac (WezTerm-as-multiplexer is a Windows-only compromise). See the Mac plan
    in [WORKFLOW.md](WORKFLOW.md#mac-plan).
 

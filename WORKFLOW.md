@@ -13,9 +13,9 @@ Four keybinding layers, no collisions:
 | Layer | Prefix | Role |
 |---|---|---|
 | AutoHotkey (Windows-global) | `Alt` | `Alt+j/k/i/l` = arrows, `Alt+u/o` = Home/End, `Alt+h/n` = PgUp/PgDn — in every app, including Neovim |
-| WezTerm (multiplexer) | `Ctrl-a` (leader) | Workspaces, tabs, splits |
+| WezTerm (multiplexer) | `Ctrl-Space` (leader) | Workspaces, tabs, splits |
 | Neovim (LazyVim) | `Space` | Editing, LSP, git review |
-| Universal navigation | `Ctrl-h/j/k/l` | Move across vim splits AND WezTerm panes as one grid |
+| Universal navigation | `Ctrl-j/k/i/l` | Move across vim splits AND WezTerm panes as one grid (arrow-style: j=left, k=down, i=up, l=right) |
 
 The AHK `Ctrl+j/k/l/i` variants (word-jump / 6-line hop) are disabled inside
 WezTerm (`#IfWinNotActive` guard in myHotkeys.ahk) so they can't shadow the
@@ -31,7 +31,7 @@ natively there). WSL2 was rejected: the Rust/game toolchain needs native Windows
 
 ## Key cheatsheet
 
-**WezTerm (leader = `Ctrl-a`, then...)**
+**WezTerm (leader = `Ctrl-Space`, then...)**
 
 | Key | Action |
 |---|---|
@@ -40,8 +40,11 @@ natively there). WSL2 was rejected: the Rust/game toolchain needs native Windows
 | `c` / `n` / `p` / `1-8` | new tab / next / prev / jump to tab |
 | `\` / `-` | split right / split down (`\|` also works for split right) |
 | `x` / `z` | close pane / zoom pane |
+| `o` | rotate panes (with two panes: swap them) |
 
-`Ctrl-h/j/k/l` moves between panes — and between vim splits when the pane is
+No leader needed: `Alt+[`/`Alt+]` or `Ctrl+[`/`Ctrl+]` switch tabs directly.
+
+`Ctrl-j/k/i/l` moves between panes — and between vim splits when the pane is
 running nvim (smart-splits.nvim sets an `IS_NVIM` user var; wezterm.lua checks it).
 
 **Neovim review keys (leader = `Space`)**
@@ -71,9 +74,14 @@ Space menu.
 | `Ctrl+S` | save, even from insert mode |
 | `Ctrl+Z` / `Ctrl+Y` | undo / redo, even from insert mode |
 | `Ctrl+←/→` | jump by word |
+| `J` / `L` (normal mode) | previous / next open file in the top strip |
+| `Ctrl+=` | jump back (after `gd`/`gr` — replaces `Ctrl+O`, which AHK owns) |
 
-Caveats: `Alt+a` (select-all) is dead in the terminal — `Ctrl+A` is the WezTerm
-leader. In a shell/Claude pane, `Alt+c` is `Ctrl+C` = interrupt, not copy.
+Caveats: `Ctrl+Space` is the WezTerm leader, so nvim never sees it (it's the
+manual trigger-completion key; the auto-popup is unaffected) and the shell
+loses PSReadLine's MenuComplete. In a shell/Claude pane, `Alt+c` is `Ctrl+C` =
+interrupt, not copy. `Alt+a` reaches apps as `Ctrl+A`, but in nvim that's
+increment-number, not select-all.
 
 **Shell / git**
 
@@ -83,11 +91,11 @@ leader. In a shell/Claude pane, `Alt+c` is `Ctrl+C` = interrupt, not copy.
 
 ## Daily loop
 
-1. `Ctrl-a s` → pick workspace (or `Ctrl-a w` → create one per worktree/agent)
+1. `Ctrl-Space s` → pick workspace (or `Ctrl-Space w` → create one per worktree/agent)
 2. Tab 1: `nvim` — navigate, read, edit
 3. Tab 2: Claude Code running against that worktree
-   (or side-by-side: `Ctrl-a \` splits, run `claude` in the new pane,
-   `Ctrl-h`/`Ctrl-l` hop between vim and Claude, `Ctrl-a z` zooms one pane)
+   (or side-by-side: `Ctrl-Space \` splits, run `claude` in the new pane,
+   `Ctrl-j`/`Ctrl-l` hop between vim and Claude, `Ctrl-Space z` zooms one pane)
 4. Review: `<space>gD` for the branch diff tree, or `<space>gg` to stage
    hunk-by-hunk and commit; `git dft` when formatting churn drowns the diff
 5. `gh pr create` when the branch is ready
@@ -136,7 +144,8 @@ leader. In a shell/Claude pane, `Alt+c` is `Ctrl+C` = interrupt, not copy.
 - <a name="mac-plan"></a>**Mac plan**: use **tmux** as the multiplexer instead of
   WezTerm workspaces (tmux is first-class on macOS; WezTerm-as-multiplexer was a
   Windows-only compromise — reevaluate later). Keep the same three-layer
-  contract: `Ctrl-a` = tmux prefix, `Space` = nvim leader, `Ctrl-h/j/k/l` =
+  contract: `Ctrl-Space` = tmux prefix (`set -g prefix C-Space`), `Space` =
+  nvim leader, `Ctrl-h/j/k/l` =
   universal pane nav (vim-tmux-navigator instead of the wezterm callback).
   Everything in `PC/nvim/` ports as-is except the Windows PATH fixes in
   options.lua; install tools with Homebrew.
