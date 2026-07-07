@@ -32,16 +32,16 @@
   };
   homebrew = {
     enable = true;
-    onActivation.cleanup = "zap";  # remove anything not listed here
-    onActivation.autoUpdate = true;
-    onActivation.extraFlags = [ "--force" ];
+    onActivation.cleanup = "none";
+    #onActivation.cleanup = "zap";  # remove anything not listed here
+    #onActivation.autoUpdate = true;
+    #onActivation.extraFlags = [ "--force" ];
     brews = [
       "herdr"
     ];
     casks = [
       "wezterm"
-      #"claude-code"
-      "adoptopenjdk8"
+      "claude-code"
       "corretto@11"
     ];
   };
