@@ -47,6 +47,22 @@ def color_for(t: int) -> str:
     return ""
 
 
+def pct_color(p: float) -> str:
+    if p >= 90:
+        return "\x1b[31m"  # red
+    if p >= 70:
+        return "\x1b[33m"  # yellow
+    return "\x1b[32m"  # green
+
+
+def usage_part(label: str, window: dict) -> str:
+    """Format one rate-limit window as "label:NN%", or "" if unavailable."""
+    p = (window or {}).get("used_percentage")
+    if p is None:
+        return ""
+    return f"{label}:{pct_color(p)}{p:.0f}%\x1b[0m"
+
+
 def main() -> None:
     try:
         data = json.load(sys.stdin)
@@ -71,6 +87,10 @@ def main() -> None:
     if branch:
         bcolor = "\x1b[33m" if git_dirty(cwd) else "\x1b[32m"  # yellow dirty / green clean
         parts.append(f"{bcolor}{branch}\x1b[0m")
+    rl = data.get("rate_limits") or {}
+    for part in (usage_part("5h", rl.get("five_hour")), usage_part("wk", rl.get("seven_day"))):
+        if part:
+            parts.append(part)
     sys.stdout.write(" | ".join(parts))
 
 
