@@ -1,0 +1,19 @@
+# herdr keybindings for Windows.
+# Merge this [[keys.command]] block into your Windows herdr config.toml
+# (run `herdr` once, then check the "Config:" path printed by `herdr --help`;
+#  typically %USERPROFILE%\.config\herdr\config.toml).
+
+# --- workspace / worktree management (add these under your [keys] table) ---
+# previous_workspace = "prefix+shift+h"   # cycle to previous workspace
+# next_workspace     = "prefix+shift+l"   # cycle to next workspace
+# open_worktree      = "prefix+shift+o"   # browse & reopen an existing worktree as a workspace
+# remove_worktree    = "prefix+shift+x"   # remove the focused worktree (asks to confirm; leaves the git branch behind)
+# (workspace_picker is prefix+w by default; shift+1..9 was dropped - terminals send !@# for shifted digits)
+
+# New worktree (auto-generated branch) of the focused workspace's repo, then start claude in it.
+# Like the desktop app's "new worktree" button. Repo is inferred from whatever workspace is focused.
+# On Windows the command string runs through cmd.exe /d /c, so PowerShell does the JSON parse.
+[[keys.command]]
+key = "prefix+shift+c"
+type = "shell"
+command = "powershell -NoProfile -Command \"$p=(herdr worktree create --focus --json | ConvertFrom-Json).result.root_pane.pane_id; herdr pane run $p claude\""
