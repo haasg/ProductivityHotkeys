@@ -1,6 +1,7 @@
 # herdr runtime artifacts (regenerated at runtime; never commit)
 dotfiles/home/.config/herdr/*.log
 dotfiles/home/.config/herdr/session.json
+dotfiles/home/.config/herdr/release-notes.json
 dotfiles/home/.config/herdr/*.sock
 
 # macOS + nix build noise
