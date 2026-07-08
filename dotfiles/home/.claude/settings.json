@@ -2,5 +2,8 @@
   "statusLine": {
     "type": "command",
     "command": "python3 /Users/haasg/code/ProductivityHotkeys/statusline.py"
+  },
+  "permissions": {
+    "defaultMode": "auto"
   }
 }
