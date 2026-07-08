@@ -1,5 +1,5 @@
 [keys]
-prefix = "ctrl+b"
+prefix = "ctrl+space"
 focus_pane_left  = "prefix+h"
 focus_pane_down  = "prefix+j"
 focus_pane_up    = "prefix+k"
@@ -8,7 +8,14 @@ split_horizontal = "prefix+double_quote"
 split_vertical    = "prefix+percent"
 new_tab   = "prefix+c"
 close_tab = "prefix+ampersand"
+next_tab     = "cmd+]"   # switch to next tab (direct)
+previous_tab = "cmd+["   # switch to previous tab (direct)
 workspace_picker = "prefix+w"
+next_agent     = "ctrl+n"   # cycle to next agent (direct, no prefix)
+previous_agent = "ctrl+h"   # cycle to previous agent (direct, no prefix)
 goto             = "prefix+g"
 copy_mode  = "prefix+y"  # herdr's copy-mode entry key; copy-mode's own internal keys (v/space select, y/Enter copy, q/Esc cancel) aren't configurable
 
+[theme]
+name = "tokyo-night"
+auto_switch = false
