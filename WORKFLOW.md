@@ -2,152 +2,131 @@
 
 Zero-mouse setup for supervising Claude Code agents in parallel git worktrees.
 The human's job is code review, so fast diff inspection and git ergonomics are
-the priority. Windows is primary; macOS is secondary (see [Mac plan](#mac-plan)).
+the priority. The same config drives **both** macOS and Windows; only the OS
+cursor layer and a couple of shell details differ.
 
-To reproduce on a new Windows machine: run `PC/setup.ps1`, then read this file.
+To reproduce: run `PC/setup.ps1` (Windows) or `dotfiles/rebuild.sh` (Mac), then
+read this file.
 
 ## Architecture
 
-Four keybinding layers, no collisions:
+**[herdr](https://herdr.dev/) is the multiplexer.** It's a Rust agent-multiplexer
+built for exactly this: run many coding agents in one terminal, see at a glance
+which agent is working / blocked / done, and keep them alive across detach and
+restart. One git worktree = one herdr workspace = one agent. herdr replaced the
+old WezTerm-as-multiplexer setup (and the never-built tmux plan) - WezTerm is now
+just the terminal herdr runs inside.
+
+Three keybinding layers, no collisions:
 
 | Layer | Prefix | Role |
 |---|---|---|
-| AutoHotkey (Windows-global) | `Alt` | `Alt+j/k/i/l` = arrows, `Alt+u/o` = Home/End, `Alt+h/n` = PgUp/PgDn — in every app, including Neovim |
-| WezTerm (multiplexer) | `Ctrl-Space` (leader) | Workspaces, tabs, splits |
-| Neovim (LazyVim) | `Space` | Editing, LSP, git review |
-| Universal navigation | `Ctrl-j/k/i/l` | Move across vim splits AND WezTerm panes as one grid (arrow-style: j=left, k=down, i=up, l=right) |
+| OS cursor layer | `Alt` (Win) / `Cmd` (Mac) | `+j/k/i/l` = arrows, `+u/o` = Home/End, `+h/n` = PgUp/PgDn - in every app, including Neovim. Windows: AutoHotkey (`PC/myHotkeys.ahk`). Mac: Hammerspoon (`Mac/init.lua`). |
+| herdr (multiplexer) | `Ctrl-Space` (prefix) | Workspaces (worktrees), agents, tabs, splits, copy-mode |
+| Neovim | `Space` (leader) | Editing, git review, pickers |
 
-The AHK `Ctrl+j/k/l/i` variants (word-jump / 6-line hop) are disabled inside
-WezTerm (`#IfWinNotActive` guard in myHotkeys.ahk) so they can't shadow the
-universal navigation layer. Inside the terminal, use real `Ctrl+←/→` for
-word-jumps instead.
+herdr never lets Neovim see `Ctrl-Space` (it's herdr's prefix), and the OS cursor
+layer sends real arrow keys, so nothing shadows the Neovim `Space` leader.
 
-Core pattern: **one git worktree = one WezTerm workspace = one agent.**
-Tab 1 = Neovim, Tab 2 = Claude Code, Tab 3 = shell/lazygit.
-
-On Windows, WezTerm's built-in multiplexer stands in for tmux (which doesn't run
-natively there). WSL2 was rejected: the Rust/game toolchain needs native Windows
-(GPU, Win32, native builds).
-
-## Key cheatsheet
-
-**WezTerm (leader = `Ctrl-Space`, then...)**
+## herdr cheatsheet (prefix = `Ctrl-Space`, then...)
 
 | Key | Action |
 |---|---|
-| `s` | fuzzy-pick workspace |
-| `w` | new named workspace |
-| `c` / `n` / `p` / `1-8` | new tab / next / prev / jump to tab |
-| `\` / `-` | split right / split down (`\|` also works for split right) |
-| `x` / `z` | close pane / zoom pane |
-| `o` | rotate panes (with two panes: swap them) |
+| `h` / `j` / `k` / `l` | focus pane left / down / up / right |
+| `"` / `%` | split horizontal / vertical |
+| `c` / `&` | new tab / close tab |
+| `w` | workspace picker (searchable list) |
+| `g` | goto |
+| `y` | copy-mode (then `v`/`space` select, `y`/`Enter` copy, `q`/`Esc` cancel) |
+| `Shift+H` / `Shift+L` | previous / next workspace |
+| `Shift+O` / `Shift+X` | open an existing worktree / remove the focused worktree |
+| `Shift+C` | **new worktree + start Claude in it** (auto-named branch of the focused repo) |
 
-No leader needed: `Alt+[`/`Alt+]` or `Ctrl+[`/`Ctrl+]` switch tabs directly.
+No prefix needed: `Ctrl+n` / `Ctrl+h` cycle to the next / previous agent directly.
 
-`Ctrl-j/k/i/l` moves between panes — and between vim splits when the pane is
-running nvim (smart-splits.nvim sets an `IS_NVIM` user var; wezterm.lua checks it).
+On Mac, `Cmd+H` / `Cmd+N` are wired in `wezterm.lua` to send `Shift+H` / `Shift+L`
+prev/next-workspace (macOS eats `Cmd` before the terminal sees it). On Windows
+there's no `Cmd`, so use `Ctrl-Space Shift+H/L` directly.
 
-**Neovim review keys (leader = `Space`)**
+## Neovim cheatsheet (leader = `Space`)
+
+The Neovim config is intentionally minimal and identical on both machines
+(`dotfiles/home/.config/nvim/`). `which-key` pops up the full list when you press
+`Space`.
 
 | Key | Action |
 |---|---|
-| `<space><space>` | find files |
-| `<space>/` | live grep |
+| `<leader>f` | find files (hidden included - this repo is dotfiles) |
+| `<leader>s` | live grep |
+| `<leader>b` | buffers |
+| `<leader>e` | Oil file browser |
+| `<leader>g` | Neogit (stage, commit; opens Diffview for review) |
 | `gd` | go to definition |
-| `<space>gd` | diffview: working tree changes (`Tab`/`S-Tab` cycle files, `]c`/`[c` jump hunks) |
-| `<space>gD` | diffview: whole branch vs main |
-| `<space>gh` | file history for current file |
-| `<space>gg` | lazygit floating window |
+| `Esc` | save the file |
+| `Ctrl+a` | select all |
 
-**Neovim editing, Windows-style (no vim-golf required)**
+Git review runs through Neogit + Diffview + gitsigns (inline blame on the current
+line). `lazygit` is still installed as a standalone TUI if you prefer it.
 
-The AHK Alt-layer plus `config/keymaps.lua` means Neovim edits like a normal
-Windows app. Live in insert mode; pop to normal mode (`Esc`) only for the
-Space menu.
+## Editing, OS-cursor style (Windows / AutoHotkey)
+
+The AHK Alt-layer makes Neovim (and every app) edit like a normal Windows app -
+live in insert mode, pop to normal only for the `Space` menu.
 
 | Key | Action |
 |---|---|
-| `i` / `Esc` | start / stop typing (insert ↔ normal mode) |
-| `Alt+j/k/i/l` | move cursor (works in any mode — they're real arrows) |
-| `Alt+Shift+j/k/i/l` | select text, Windows-style |
-| `Alt+c` / `Alt+v` / `Ctrl+X` | copy / paste / cut (system clipboard) |
-| `Ctrl+S` | save, even from insert mode |
-| `Ctrl+Z` / `Ctrl+Y` | undo / redo, even from insert mode |
-| `Ctrl+←/→` | jump by word |
-| `J` / `L` (normal mode) | previous / next open file in the top strip |
-| `Ctrl+=` | jump back (after `gd`/`gr` — replaces `Ctrl+O`, which AHK owns) |
+| `Alt+j/k/i/l` | move cursor (real arrows, any mode) |
+| `Alt+Shift+j/k/i/l` | select text |
+| `Alt+u/o` | Home / End &nbsp;&nbsp; `Alt+h/n` | PgUp / PgDn |
+| `Alt+c` / `Alt+v` | copy / paste (system clipboard) |
 
-Caveats: `Ctrl+Space` is the WezTerm leader, so nvim never sees it (it's the
-manual trigger-completion key; the auto-popup is unaffected) and the shell
-loses PSReadLine's MenuComplete. In a shell/Claude pane, `Alt+c` is `Ctrl+C` =
-interrupt, not copy. `Alt+a` reaches apps as `Ctrl+A`, but in nvim that's
-increment-number, not select-all.
-
-**Shell / git**
-
-- `z <dir>` — zoxide frecency jump; `lg` — lazygit
-- `git dft` — difftastic structural diff (post-rustfmt / refactor review)
-- delta is the pager for `git diff`/`log`/lazygit (side-by-side, word-level)
+Caveat: in a shell/agent pane, `Alt+c` reaches the app as `Ctrl+C` = interrupt,
+not copy. (The Mac Hammerspoon layer is the `Cmd`-based mirror of the same map.)
 
 ## Daily loop
 
-1. `Ctrl-Space s` → pick workspace (or `Ctrl-Space w` → create one per worktree/agent)
-2. Tab 1: `nvim` — navigate, read, edit
-3. Tab 2: Claude Code running against that worktree
-   (or side-by-side: `Ctrl-Space \` splits, run `claude` in the new pane,
-   `Ctrl-j`/`Ctrl-l` hop between vim and Claude, `Ctrl-Space z` zooms one pane)
-4. Review: `<space>gD` for the branch diff tree, or `<space>gg` to stage
-   hunk-by-hunk and commit; `git dft` when formatting churn drowns the diff
-5. `gh pr create` when the branch is ready
+1. `herdr` (or reattach - sessions survive restart).
+2. `Ctrl-Space Shift+C` - spin up a fresh worktree with Claude already running, or
+   `Ctrl-Space w` to jump to an existing workspace.
+3. Split the pane (`Ctrl-Space "`), run `nvim` beside Claude; `Ctrl-Space h/l` to
+   hop between them.
+4. Review the agent's work: `<leader>g` (Neogit) to stage hunk-by-hunk and commit,
+   Diffview for the branch diff.
+5. `Ctrl+n` / `Ctrl+h` to sweep across the other agents and see who's blocked / done.
+6. `gh pr create` when a branch is ready; `Ctrl-Space Shift+X` to tear the worktree down.
 
-## What lives where
+## What's shared vs per-OS
 
-| Repo file | Deploys to | What it does |
+| Config | Shared? | Notes |
 |---|---|---|
-| `PC/wezterm.lua` | `~/.wezterm.lua` | terminal + multiplexer keys + appearance |
-| `PC/nvim/lazyvim.json` | `%LOCALAPPDATA%\nvim\` | enables the `lang.rust` LazyVim extra |
-| `PC/nvim/lua/config/options.lua` | `%LOCALAPPDATA%\nvim\lua\config\` | PATH fixes (see troubleshooting) |
-| `PC/nvim/lua/config/keymaps.lua` | `%LOCALAPPDATA%\nvim\lua\config\` | Windows-style select/copy/paste/undo (pairs with AHK Alt-layer) |
-| `PC/myHotkeys.ahk` | run at startup with AutoHotkey v1 | global Alt-layer arrows; Ctrl-variants disabled inside WezTerm |
-| `PC/nvim/lua/plugins/rust.lua` | `...\lua\plugins\` | rust-analyzer: clippy on check, not allFeatures |
-| `PC/nvim/lua/plugins/diffview.lua` | `...\lua\plugins\` | branch review keymaps |
-| `PC/nvim/lua/plugins/smart-splits.lua` | `...\lua\plugins\` | nvim half of unified Ctrl-h/j/k/l |
-| `PC/lazygit-config.yml` | `%LOCALAPPDATA%\lazygit\config.yml` | delta as lazygit's pager |
-| `PC/powershell-profile.ps1` | `~\Documents\PowerShell\Microsoft.PowerShell_profile.ps1` | zoxide init + `lg` alias |
+| `dotfiles/home/.config/wezterm/wezterm.lua` | yes | one file; `is_windows` branch for font size / decorations / blur |
+| `dotfiles/home/.config/nvim/` | yes | identical on both |
+| `dotfiles/home/AGENTS.md` | yes | global agent instructions (Claude `CLAUDE.md` + Codex `AGENTS.md`) |
+| herdr `config.toml` | no | Mac `dotfiles/.../herdr/`, Windows `PC/herdr-config.toml` - only the `[[keys.command]]` shell block differs (python3/sh vs PowerShell). Keep in sync. |
+| OS cursor layer | no | `PC/myHotkeys.ahk` (AHK) vs `Mac/init.lua` (Hammerspoon) |
+| `~/.claude/settings.json` | no | hardcodes an OS path + `python3`/`python` for the statusLine |
 
-## Troubleshooting (learned the hard way)
+## Troubleshooting
 
-- **Treesitter parsers fail to compile with `ld.exe: cannot open output file \\?\C:\... Invalid argument`**:
-  another gcc is shadowing scoop's mingw in PATH (on this machine: Strawberry
-  Perl's bundled gcc 13.2, which can't write `\\?\` extended-length paths).
-  `PC/nvim/lua/config/options.lua` fixes it by prepending scoop's mingw to PATH
-  inside nvim only. If it recurs, check `gcc --version` — it should say
-  MinGW-Builds 16.x, not Strawberry.
-- **checkhealth says `tree-sitter (CLI) is not installed`** even though mason
-  installed it: mason only adds its bin dir to PATH once the plugin loads.
-  options.lua prepends `nvim-data/mason/bin` at startup.
-- **Headless `nvim +"Lazy! sync"` reports "Package is already installing"** on
-  first run: benign race between LazyVim's auto-install and the sync; run it
-  again. Mason installs (codelldb) abort if nvim exits mid-download — just
-  reopen nvim and let them finish.
-- **Window can't be dragged**: `window_decorations` must include
-  `INTEGRATED_BUTTONS` (the tab bar is the drag handle — which is also why
-  `hide_tab_bar_if_only_one_tab = false`).
-- **Boxes/missing glyphs in nvim UI**: WezTerm font must be a Nerd Font
-  (`JetBrainsMono Nerd Font`, installed via scoop's nerd-fonts bucket).
+- **Windows symlinks need privilege**: `link-configs.ps1` creates symlinks;
+  run it from an elevated shell **or** turn on Settings > System > For developers
+  > Developer Mode once. Otherwise it warns "access denied" and skips.
+- **herdr on Windows is preview/beta** - expect rough edges; the Mac build is the
+  reference. Reinstall with `irm https://herdr.dev/install.ps1 | iex`.
+- **Neovim clipboard**: the config uses `clipboard=unnamedplus`; recent Neovim on
+  Windows has a built-in provider, so yanks reach the system clipboard without
+  extra tools.
+- **Boxes / missing glyphs**: the WezTerm font must be a Nerd Font
+  (`Hack Nerd Font`, installed via scoop's `nerd-fonts` bucket / `nerd-fonts.hack`
+  on Mac).
 
 ## Deferred / next steps
 
-- **Worktree-spawner script**: `git worktree add` → named workspace → spawn
-  Claude Code pane, plus teardown. Build after a few days of real use, once the
-  preferred spawn layout is known.
-- <a name="mac-plan"></a>**Mac plan**: use **tmux** as the multiplexer instead of
-  WezTerm workspaces (tmux is first-class on macOS; WezTerm-as-multiplexer was a
-  Windows-only compromise — reevaluate later). Keep the same three-layer
-  contract: `Ctrl-Space` = tmux prefix (`set -g prefix C-Space`), `Space` =
-  nvim leader, `Ctrl-h/j/k/l` =
-  universal pane nav (vim-tmux-navigator instead of the wezterm callback).
-  Everything in `PC/nvim/` ports as-is except the Windows PATH fixes in
-  options.lua; install tools with Homebrew.
-- Keybinding contract to preserve: any future additions must not collide with
-  the three layers above.
+- **rust-analyzer / LSP in Neovim**: the shared config dropped all LSP/treesitter
+  to stay minimal (which is also why Windows no longer needs mingw). Re-add it to
+  `dotfiles/home/.config/nvim/lua/plugins/` if wanted - it lands on both machines.
+- **Windows-style Neovim editing keymaps** (Ctrl+C/V/X select-mode, J/L buffer
+  nav, Ctrl+Z/Y) lived in the old `PC/nvim/lua/config/keymaps.lua`; they're in git
+  history if the vim-style keys feel too sparse.
+- Keybinding contract to preserve: any future additions must not collide with the
+  three layers above.
