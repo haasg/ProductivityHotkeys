@@ -4,8 +4,18 @@
 # PowerShell instead of sh/python3. Keep the two files in sync when you change
 # a binding.
 #
-# Live path on Windows: %USERPROFILE%\.config\herdr\config.toml
+# Live path on Windows: %APPDATA%\herdr\config.toml  (NOT ~/.config/herdr - that
+# is the macOS path. On Windows herdr resolves its config dir to %APPDATA%\herdr,
+# the same directory it keeps herdr.sock / session.json / the logs in.)
 # link-configs.ps1 symlinks that path at this file, so edit this copy.
+
+# herdr writes these two itself on first run / `herdr channel set`. They live
+# here so that symlinking this file over the generated one doesn't re-trigger
+# onboarding or silently drop the machine back to the stable channel.
+onboarding = false
+
+[update]
+channel = "preview"
 
 [keys]
 prefix = "ctrl+space"

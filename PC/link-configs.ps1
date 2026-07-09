@@ -35,7 +35,10 @@ $links = @(
     @{ Link = "$env:LOCALAPPDATA\nvim";                       Target = "$dot\.config\nvim" }
 
     # herdr: Windows needs its own config (the [[keys.command]] shell block differs).
-    @{ Link = "$env:USERPROFILE\.config\herdr\config.toml";  Target = "$here\herdr-config.toml" }
+    # Windows config dir is %APPDATA%\herdr, NOT ~/.config/herdr (that's the Mac path).
+    # Linking the Mac path here is a silent no-op: herdr reads %APPDATA% and your
+    # keybindings never load.
+    @{ Link = "$env:APPDATA\herdr\config.toml";              Target = "$here\herdr-config.toml" }
 
     # Global agent instructions - shared verbatim with Mac (Claude reads CLAUDE.md, Codex reads AGENTS.md).
     @{ Link = "$env:USERPROFILE\.claude\CLAUDE.md";          Target = "$dot\AGENTS.md" }
@@ -65,6 +68,11 @@ foreach ($l in $links) {
         New-Item -ItemType Directory -Path $parent -Force | Out-Null
     }
 
+    # Displacing the old path and creating the link must be all-or-nothing: creating a
+    # symlink needs elevation/Developer Mode, and a failure here used to leave the live
+    # path EMPTY (the real config already moved to .bak). Track what we displaced so the
+    # catch can put it back.
+    $backup = $null
     $existing = Get-Item -LiteralPath $link -Force -ErrorAction SilentlyContinue
     if ($existing) {
         if ($existing.LinkType -eq 'SymbolicLink' -and $existing.Target -eq $target) {
@@ -91,6 +99,10 @@ foreach ($l in $links) {
     catch {
         Write-Warning "FAIL  $link : $($_.Exception.Message)"
         Write-Warning "      (need an elevated shell or Developer Mode - see the header of this script)"
+        if ($backup) {
+            Move-Item -LiteralPath $backup -Destination $link
+            Write-Warning "      restored the original file - $link is unchanged"
+        }
     }
 }
 

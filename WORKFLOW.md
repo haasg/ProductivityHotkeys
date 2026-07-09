@@ -102,7 +102,7 @@ not copy. (The Mac Hammerspoon layer is the `Cmd`-based mirror of the same map.)
 | `dotfiles/home/.config/wezterm/wezterm.lua` | yes | one file; `is_windows` branch for font size / decorations / blur |
 | `dotfiles/home/.config/nvim/` | yes | identical on both |
 | `dotfiles/home/AGENTS.md` | yes | global agent instructions (Claude `CLAUDE.md` + Codex `AGENTS.md`) |
-| herdr `config.toml` | no | Mac `dotfiles/.../herdr/`, Windows `PC/herdr-config.toml` - only the `[[keys.command]]` shell block differs (python3/sh vs PowerShell). Keep in sync. |
+| herdr `config.toml` | no | Mac `dotfiles/.../herdr/`, Windows `PC/herdr-config.toml` - only the `[[keys.command]]` shell block differs (python3/sh vs PowerShell). Keep in sync. Live path differs too: `~/.config/herdr/` on Mac, `%APPDATA%\herdr\` on Windows. |
 | OS cursor layer | no | `PC/myHotkeys.ahk` (AHK) vs `Mac/init.lua` (Hammerspoon) |
 | `~/.claude/settings.json` | no | hardcodes an OS path + `python3`/`python` for the statusLine |
 
@@ -111,6 +111,13 @@ not copy. (The Mac Hammerspoon layer is the `Cmd`-based mirror of the same map.)
 - **Windows symlinks need privilege**: `link-configs.ps1` creates symlinks;
   run it from an elevated shell **or** turn on Settings > System > For developers
   > Developer Mode once. Otherwise it warns "access denied" and skips.
+- **herdr keybindings do nothing on Windows**: herdr reads
+  `%APPDATA%\herdr\config.toml` there, *not* `~/.config/herdr/config.toml` (that's
+  the Mac path). Linking the Mac path is a silent no-op - herdr just uses its
+  generated stub and none of the `[keys]` bindings load, so `Ctrl+Space`,
+  `Ctrl+H`, and `Ctrl+N` all appear dead. Confirm the live file with
+  `herdr server reload-config`: it prints `"status":"applied"` and echoes any
+  parse error, and the config it reads sits next to `herdr.sock` and the logs.
 - **herdr on Windows is preview/beta** - expect rough edges; the Mac build is the
   reference. Reinstall with `irm https://herdr.dev/install.ps1 | iex`.
 - **Neovim clipboard**: the config uses `clipboard=unnamedplus`; recent Neovim on
