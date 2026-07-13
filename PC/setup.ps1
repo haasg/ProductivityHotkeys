@@ -33,6 +33,12 @@ if (-not (Get-Command herdr -ErrorAction SilentlyContinue)) {
     powershell -ExecutionPolicy Bypass -c "irm https://herdr.dev/install.ps1 | iex"
 }
 
+# --- 2b. treehouse: the git-worktree pool herdr's Shift+C leases from ---------
+# Mac gets it from the flake input (dotfiles/flake.nix); Windows uses the installer.
+if (-not (Get-Command treehouse -ErrorAction SilentlyContinue)) {
+    powershell -ExecutionPolicy Bypass -c "irm https://kunchenguid.github.io/treehouse/install.ps1 | iex"
+}
+
 # --- 3. Claude Code ----------------------------------------------------------
 # Mac installs the "claude-code" cask. On Windows use the official installer
 # (see claude.com/claude-code if this command ever changes).

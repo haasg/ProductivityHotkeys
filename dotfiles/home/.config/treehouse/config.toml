@@ -1,0 +1,22 @@
+# User-level treehouse config.
+#
+# Shared verbatim by Mac and Windows: treehouse resolves this to
+# ~/.config/treehouse/config.toml on BOTH platforms. (herdr does not - it reads
+# %APPDATA%\herdr on Windows. Don't copy that assumption over here.)
+#
+# Per-repo overrides go in a `treehouse.toml` at that repo's root, which wins
+# over this file. One exception: [hooks] only ever run from THIS file; hooks in
+# a repo-level treehouse.toml are silently ignored.
+
+# Worktrees are reused, not recreated, so each one keeps its own target/ and
+# node_modules. That is the point of the pool - and also why this number is not
+# 16 (the treehouse default): a Rust target/ dir is easily 5-20 GB, so 16 trees
+# is a few hundred GB of build cache. Raise it per-repo where the cache is cheap.
+max_trees = 6
+
+# Worktree root. Empty = $HOME/.treehouse.
+# root = ""
+
+# [hooks]
+# post_create = ["cargo fetch"]   # runs in the worktree, after reset, before handoff
+# pre_destroy = []

@@ -40,6 +40,14 @@ $links = @(
     # keybindings never load.
     @{ Link = "$env:APPDATA\herdr\config.toml";              Target = "$here\herdr-config.toml" }
 
+    # ...but the two scripts its Shift+C / Shift+X bindings call ARE shared with the Mac.
+    @{ Link = "$env:APPDATA\herdr\new-agent.py";             Target = "$dot\.config\herdr\new-agent.py" }
+    @{ Link = "$env:APPDATA\herdr\return-agent.py";          Target = "$dot\.config\herdr\return-agent.py" }
+
+    # treehouse: owns the git-worktree pool that Shift+C leases from. Unlike herdr it
+    # reads ~/.config on Windows too, so this file is shared with the Mac verbatim.
+    @{ Link = "$env:USERPROFILE\.config\treehouse\config.toml"; Target = "$dot\.config\treehouse\config.toml" }
+
     # Global agent instructions - shared verbatim with Mac (Claude reads CLAUDE.md, Codex reads AGENTS.md).
     @{ Link = "$env:USERPROFILE\.claude\CLAUDE.md";          Target = "$dot\AGENTS.md" }
     @{ Link = "$env:USERPROFILE\.codex\AGENTS.md";           Target = "$dot\AGENTS.md" }
@@ -50,6 +58,18 @@ $links = @(
     # NOTE: ~/.claude/settings.json is intentionally NOT shared - it hardcodes a
     # Mac path and python3 for the statusLine. setup.ps1 writes the Windows one.
 )
+
+# WezTerm looks for ~/.wezterm.lua BEFORE ~/.config/wezterm/wezterm.lua, so a
+# leftover file there silently shadows the symlink below and none of this repo's
+# WezTerm config loads. That is not hypothetical: the pre-herdr config lived
+# there, kept Ctrl+Space as a WezTerm *leader*, and ate herdr's prefix whole.
+# Nothing in the repo is supposed to install it, so its presence is always drift.
+$shadow = "$env:USERPROFILE\.wezterm.lua"
+if (Test-Path -LiteralPath $shadow) {
+    $shadowBak = "$shadow.bak-$(Get-Date -Format 'yyyyMMdd-HHmmss')"
+    Move-Item -LiteralPath $shadow -Destination $shadowBak
+    Write-Warning "shadow  $shadow outranks the repo's wezterm.lua - moved to $shadowBak"
+}
 
 foreach ($l in $links) {
     $link   = $l.Link

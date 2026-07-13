@@ -20,6 +20,9 @@ Two things live here:
 | `dotfiles/home/.config/nvim/` | Neovim config, shared by both machines |
 | `dotfiles/home/.config/wezterm/wezterm.lua` | WezTerm config, shared (OS branch inside) |
 | `dotfiles/home/.config/herdr/config.toml` | herdr config (Mac) |
+| `dotfiles/home/.config/herdr/new-agent.py` | `Shift+C`: lease a warm worktree, branch it, start Claude - shared |
+| `dotfiles/home/.config/herdr/return-agent.py` | `Shift+X`: return the worktree to the pool - shared |
+| `dotfiles/home/.config/treehouse/config.toml` | treehouse worktree-pool config, shared (same path on both OSes) |
 | `dotfiles/home/AGENTS.md` | global agent instructions (Claude + Codex), shared |
 | `PC/setup.ps1` | one-script bootstrap for a new Windows machine |
 | `PC/link-configs.ps1` | declares every Windows dotfile symlink (the nix `mkOutOfStoreSymlink` analog) |
@@ -33,9 +36,10 @@ Two things live here:
 
 1. **Everything terminal/editor/agent** - run `PC/setup.ps1` from an **elevated**
    PowerShell (symlinks need it, or turn on Developer Mode first). It installs
-   scoop + the CLI tools + the Nerd Font, installs **herdr** and **Claude Code**,
-   symlinks every shared config into place (`link-configs.ps1`), writes the
-   statusLine, and bootstraps Neovim plugins.
+   scoop + the CLI tools + the Nerd Font, installs **herdr**, **treehouse** and
+   **Claude Code**, symlinks every shared config into place (`link-configs.ps1`),
+   writes the statusLine, and bootstraps Neovim plugins.
+   Needs `python` on the PATH (the herdr worktree keys and the statusLine use it).
 
 2. **Hotkeys** - install [AutoHotkey](https://www.autohotkey.com/) and run
    `PC/myHotkeys.ahk`. It's **AHK v1 syntax** - pick v1.1 if a fresh install
@@ -52,8 +56,10 @@ The Mac is managed declaratively with nix (nix-darwin + home-manager) under
 
 1. **Everything** - `dotfiles/rebuild.sh` (symlinks the repo to `~/.dotfiles` and
    runs `darwin-rebuild switch`). This installs the CLI tools, starship, WezTerm,
-   herdr, and Claude Code, and symlinks the shared configs (`wezterm`, `nvim`,
-   `herdr`, `AGENTS.md`, `settings.json`).
+   herdr, treehouse, and Claude Code, and symlinks the shared configs (`wezterm`,
+   `nvim`, `herdr`, `treehouse`, `AGENTS.md`, `settings.json`).
+   treehouse comes from a flake input (it isn't in nixpkgs), so the first rebuild
+   after pulling this will update `flake.lock`.
 
 2. **Hotkeys** - `brew install --cask hammerspoon`, copy `Mac/init.lua` to
    `~/.hammerspoon/init.lua`, reload (Hammerspoon isn't managed by nix).
@@ -67,6 +73,7 @@ Installed by `setup.ps1` (Windows) / nix + Homebrew (Mac). Kept in sync across b
 | Tool | Why |
 |------|-----|
 | `herdr` | agent multiplexer - the day-to-day driver (workspaces = worktrees) |
+| `treehouse` | pool of reusable git worktrees, so each agent starts with a warm build cache |
 | `neovim` | editor (minimal hand-rolled config: snacks, oil, neogit, gitsigns, which-key) |
 | `wezterm` | terminal herdr runs inside |
 | `claude` (Claude Code) | the agent being supervised |
