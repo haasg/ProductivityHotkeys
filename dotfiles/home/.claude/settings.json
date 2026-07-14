@@ -6,5 +6,10 @@
   "statusLine": {
     "type": "command",
     "command": "python3 /Users/haasg/code/ProductivityHotkeys/statusline.py"
-  }
+  },
+  "voice": {
+    "enabled": true,
+    "mode": "hold"
+  },
+  "voiceEnabled": true
 }

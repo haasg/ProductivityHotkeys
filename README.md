@@ -10,10 +10,13 @@ Two things live here:
    for supervising Claude Code agents in parallel worktrees. Architecture, key
    cheatsheet, and troubleshooting: **[WORKFLOW.md](WORKFLOW.md)**.
 
+One-page keybind reference (Mac + Windows side by side): **[CHEATSHEET.md](CHEATSHEET.md)**.
+
 ## Repo layout
 
 | File | What it is |
 |------|------------|
+| `CHEATSHEET.md` | one-page keybind reference, Mac + Windows side by side |
 | `WORKFLOW.md` | the dev-workflow doc: architecture, keys, daily loop |
 | `PC/setup.ps1` | one-script bootstrap for a new Windows machine |
 | `PC/myHotkeys.ahk` | AutoHotkey script — JKIL cursor movement on Windows |
