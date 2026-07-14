@@ -1,19 +1,78 @@
-# herdr keybindings for Windows.
-# Merge this [[keys.command]] block into your Windows herdr config.toml
-# (run `herdr` once, then check the "Config:" path printed by `herdr --help`;
-#  typically %USERPROFILE%\.config\herdr\config.toml).
+# herdr config for Windows. Mirrors the Mac config
+# (dotfiles/home/.config/herdr/config.toml) key-for-key; the ONLY intended
+# difference is the [[keys.command]] block at the bottom, which has to use
+# PowerShell instead of sh/python3. Keep the two files in sync when you change
+# a binding.
+#
+# Live path on Windows: %APPDATA%\herdr\config.toml  (NOT ~/.config/herdr - that
+# is the macOS path. On Windows herdr resolves its config dir to %APPDATA%\herdr,
+# the same directory it keeps herdr.sock / session.json / the logs in.)
+# link-configs.ps1 symlinks that path at this file, so edit this copy.
 
-# --- workspace / worktree management (add these under your [keys] table) ---
-# previous_workspace = "prefix+shift+h"   # cycle to previous workspace
-# next_workspace     = "prefix+shift+l"   # cycle to next workspace
-# open_worktree      = "prefix+shift+o"   # browse & reopen an existing worktree as a workspace
-# remove_worktree    = "prefix+shift+x"   # remove the focused worktree (asks to confirm; leaves the git branch behind)
-# (workspace_picker is prefix+w by default; shift+1..9 was dropped - terminals send !@# for shifted digits)
+# herdr writes these two itself on first run / `herdr channel set`. They live
+# here so that symlinking this file over the generated one doesn't re-trigger
+# onboarding or silently drop the machine back to the stable channel.
+onboarding = false
 
-# New worktree (auto-generated branch) of the focused workspace's repo, then start claude in it.
-# Like the desktop app's "new worktree" button. Repo is inferred from whatever workspace is focused.
-# On Windows the command string runs through cmd.exe /d /c, so PowerShell does the JSON parse.
+[update]
+channel = "preview"
+
+[keys]
+prefix = "ctrl+space"
+focus_pane_left  = "prefix+h"
+focus_pane_down  = "prefix+j"
+focus_pane_up    = "prefix+k"
+focus_pane_right = "prefix+l"
+split_horizontal = "prefix+double_quote"
+split_vertical    = "prefix+percent"
+new_tab   = "prefix+c"
+close_tab = "prefix+ampersand"
+# Alt+[ / Alt+] are the user-facing tab keys. They can't be bound here directly:
+# a terminal encodes Alt+x as ESC x, so Alt+[ arrives as ESC [ - a bare CSI
+# introducer - and herdr's input parser eats it as the start of an escape
+# sequence. wezterm.lua intercepts the chord before it is encoded and replays it
+# as this prefix sequence instead.
+previous_tab = "prefix+["   # user-facing key: Alt+[
+next_tab     = "prefix+]"   # user-facing key: Alt+]
+workspace_picker = "prefix+w"
+next_agent     = "ctrl+n"   # cycle to next agent (direct, no prefix)
+previous_agent = "ctrl+h"   # cycle to previous agent (direct, no prefix)
+goto             = "prefix+g"
+copy_mode  = "prefix+y"  # copy-mode's own keys (v/space select, y/Enter copy, q/Esc cancel) aren't configurable
+
+# --- workspace / worktree management ---
+# workspace_picker (prefix+w) opens a searchable list; use arrow keys / navigate mode (g) to move within it.
+previous_workspace = "prefix+shift+h"   # cycle to previous workspace
+next_workspace     = "prefix+shift+l"   # cycle to next workspace
+
+# --- worktrees belong to treehouse, not herdr ---
+# treehouse keeps a POOL of reusable worktrees so each one keeps its warm target/
+# dir between agents. herdr must never mint or delete one behind its back, so every
+# built-in worktree action is explicitly unbound ("" is how herdr disables an action).
+#
+# new_worktree is the one that matters: herdr binds it to prefix+shift+g BY DEFAULT,
+# so merely deleting the line would leave a live key that bypasses the pool.
+new_worktree    = ""
+open_worktree   = ""   # picking a tree by hand can grab one treehouse hasn't leased you; use prefix+w
+remove_worktree = ""   # this is `git worktree remove` - it would destroy a pool member
+
+# Shift+C / Shift+X are the treehouse-backed replacements. The heavy lifting lives in
+# two python scripts shared verbatim with the Mac; only the interpreter name differs
+# (`python` here, `python3` there), the same split statusline.py already uses.
+# The command runs through cmd.exe /d /c, which expands %APPDATA%.
+# Single-quoted TOML strings are literal, so the backslashes need no escaping.
 [[keys.command]]
 key = "prefix+shift+c"
 type = "shell"
-command = "powershell -NoProfile -Command \"$p=(herdr worktree create --focus --json | ConvertFrom-Json).result.root_pane.pane_id; herdr pane run $p claude\""
+command = 'python %APPDATA%\herdr\new-agent.py'
+description = "new agent: lease a warm worktree from the pool, open it, start claude"
+
+[[keys.command]]
+key = "prefix+shift+x"
+type = "shell"
+command = 'python %APPDATA%\herdr\return-agent.py'
+description = "return the focused worktree to the pool and close its workspace"
+
+[theme]
+name = "tokyo-night"
+auto_switch = false

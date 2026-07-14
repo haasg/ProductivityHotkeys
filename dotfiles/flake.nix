@@ -12,9 +12,14 @@
     home-manager.inputs.nixpkgs.follows = "nixpkgs";
 
     nix-homebrew.url = "github:zhaofengli/nix-homebrew";
+
+    # The git-worktree pool herdr's Shift+C leases from. Not in nixpkgs; its own
+    # flake exposes packages.<system>.default (a buildGoModule).
+    treehouse.url = "github:kunchenguid/treehouse";
+    treehouse.inputs.nixpkgs.follows = "nixpkgs";
   };
 
-  outputs = inputs@{ self, nix-darwin, nix-homebrew, home-manager, nixpkgs }: {
+  outputs = inputs@{ self, nix-darwin, nix-homebrew, home-manager, nixpkgs, treehouse }: {
     darwinConfigurations."mac" = nix-darwin.lib.darwinSystem {
       modules = [ 
         ./configuration.nix
@@ -23,6 +28,7 @@
         {
           home-manager.useGlobalPkgs = true;
           home-manager.useUserPackages = true;
+          home-manager.extraSpecialArgs = { inherit inputs; };
           home-manager.users.haasg = import ./home.nix;
         }
        ];

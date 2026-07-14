@@ -1,4 +1,4 @@
-{ config, pkgs, ... }:
+{ config, pkgs, inputs, ... }:
 
 let
   dotfiles = "${config.home.homeDirectory}/.dotfiles";
@@ -18,6 +18,8 @@ in
     neovim
     # the font everything renders in
     nerd-fonts.hack
+    # the warm git-worktree pool herdr's Shift+C leases from (flake input, not nixpkgs)
+    inputs.treehouse.packages.${pkgs.stdenv.hostPlatform.system}.default
   ];
   fonts.fontconfig.enable = true;
   home.sessionVariables.EDITOR = "nvim";
@@ -58,8 +60,11 @@ in
     config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/.config/wezterm";
   home.file.".config/nvim".source =
     config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/.config/nvim";
+  # Whole dir, so new-agent.py / return-agent.py land next to config.toml.
   home.file.".config/herdr".source =
     config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/.config/herdr";
+  home.file.".config/treehouse".source =
+    config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/.config/treehouse";
   home.file.".claude/settings.json".source =
     config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/.claude/settings.json";
 

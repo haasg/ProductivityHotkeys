@@ -8,6 +8,13 @@ split_horizontal = "prefix+minus"       # split down / stacked (wezterm's -)
 split_vertical    = "prefix+backslash"  # split right / side-by-side (wezterm's \)
 new_tab   = "prefix+c"
 close_tab = "prefix+ampersand"
+# Alt+[ / Alt+] are the user-facing tab keys. They can't be bound here directly:
+# a terminal encodes Alt+x as ESC x, so Alt+[ arrives as ESC [ - a bare CSI
+# introducer - and herdr's input parser eats it as the start of an escape
+# sequence. wezterm.lua intercepts the chord before it is encoded and replays it
+# as this prefix sequence instead.
+previous_tab = "prefix+["   # user-facing key: Alt+[
+next_tab     = "prefix+]"   # user-facing key: Alt+]
 workspace_picker = "prefix+w"
 next_agent     = "ctrl+n"   # cycle to next agent (direct, no prefix)
 previous_agent = "ctrl+h"   # cycle to previous agent (direct, no prefix)
@@ -20,15 +27,30 @@ copy_mode  = "prefix+y"  # herdr's copy-mode entry key; copy-mode's own internal
 # since the Cmd/super modifier can't travel through a normal terminal input stream).
 previous_workspace = "prefix+shift+h"   # cycle to previous workspace  (user-facing key: Cmd+H)
 next_workspace     = "prefix+shift+l"   # cycle to next workspace      (user-facing key: Cmd+N)
-open_worktree      = "prefix+shift+o"   # browse & reopen an existing worktree as a workspace
-remove_worktree    = "prefix+shift+x"   # remove the focused worktree (asks to confirm; leaves the git branch behind)
 
-# New worktree (auto-generated branch) of the focused workspace's repo, then start claude in it.
-# Like the desktop app's "new worktree" button. Repo is inferred from whatever workspace is focused.
+# --- worktrees belong to treehouse, not herdr ---
+# treehouse keeps a POOL of reusable worktrees so each one keeps its warm target/
+# dir between agents. herdr must never mint or delete one behind its back, so every
+# built-in worktree action is explicitly unbound ("" is how herdr disables an action).
+#
+# new_worktree is the one that matters: herdr binds it to prefix+shift+g BY DEFAULT,
+# so merely deleting the line would leave a live key that bypasses the pool.
+new_worktree    = ""
+open_worktree   = ""   # picking a tree by hand can grab one treehouse hasn't leased you; use prefix+w
+remove_worktree = ""   # this is `git worktree remove` - it would destroy a pool member
+
+# Shift+C / Shift+X are the treehouse-backed replacements (see the scripts for the flow).
 [[keys.command]]
 key = "prefix+shift+c"
 type = "shell"
-command = "P=$(herdr worktree create --focus --json | python3 -c 'import sys,json;print(json.load(sys.stdin)[\"result\"][\"root_pane\"][\"pane_id\"])'); herdr pane run \"$P\" claude"
+command = "python3 ~/.config/herdr/new-agent.py"
+description = "new agent: lease a warm worktree from the pool, open it, start claude"
+
+[[keys.command]]
+key = "prefix+shift+x"
+type = "shell"
+command = "python3 ~/.config/herdr/return-agent.py"
+description = "return the focused worktree to the pool and close its workspace"
 
 [theme]
 name = "tokyo-night"
