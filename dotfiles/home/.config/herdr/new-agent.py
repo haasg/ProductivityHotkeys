@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""New agent: lease a warm worktree from treehouse, open it in herdr, run claude.
+"""New agent: lease a warm worktree from treehouse, open it in herdr, run claude
+on the left with a plain terminal beside it on the right.
 
 Bound to `Ctrl-Space Shift+C`. treehouse owns the worktree pool; herdr only
 renders whatever treehouse hands out. See WORKFLOW.md.
@@ -77,7 +78,12 @@ def main():
 
         opened = herdr("worktree", "open", "--workspace", workspace_id,
                        "--path", path, "--label", branch, "--focus", "--json")
-        run(["herdr", "pane", "run", opened["root_pane"]["pane_id"], "claude"])
+        root_pane = opened["root_pane"]["pane_id"]
+        # Terminal on the right, already cd'd into the worktree; claude keeps
+        # the left pane and the focus.
+        run(["herdr", "pane", "split", root_pane, "--direction", "right",
+             "--cwd", path, "--no-focus"])
+        run(["herdr", "pane", "run", root_pane, "claude"])
     except SystemExit:
         # A leaked lease is never handed out again and survives prune, so the
         # tree would be stranded for good.

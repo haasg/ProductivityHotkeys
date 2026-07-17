@@ -44,7 +44,7 @@ remove_worktree = ""   # this is `git worktree remove` - it would destroy a pool
 key = "prefix+shift+c"
 type = "shell"
 command = "python3 ~/.config/herdr/new-agent.py"
-description = "new agent: lease a warm worktree from the pool, open it, start claude"
+description = "new agent: lease a warm worktree from the pool, open it, start claude + a terminal"
 
 [[keys.command]]
 key = "prefix+shift+x"
