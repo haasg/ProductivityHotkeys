@@ -15,9 +15,8 @@ return
 Send, {Ctrl down}{c down}{c up}{Ctrl up}
 return
 
-!v::
-Send, {Ctrl down}{v down}{v up}{Ctrl up}
-return
+; Alt+V is deliberately NOT remapped: Claude Code's clipboard-image paste key
+; on Windows is Alt+V, and a global Alt+V -> Ctrl+V remap silently breaks it.
 
 !a::
 Send, {Ctrl down}{a down}{a up}{Ctrl up}

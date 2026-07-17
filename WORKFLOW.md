@@ -96,10 +96,15 @@ live in insert mode, pop to normal only for the `Space` menu.
 | `Alt+j/k/i/l` | move cursor (real arrows, any mode) |
 | `Alt+Shift+j/k/i/l` | select text |
 | `Alt+u/o` | Home / End &nbsp;&nbsp; `Alt+h/n` | PgUp / PgDn |
-| `Alt+c` / `Alt+v` | copy / paste (system clipboard) |
+| `Alt+c` | copy (system clipboard) |
 
 Caveat: in a shell/agent pane, `Alt+c` reaches the app as `Ctrl+C` = interrupt,
 not copy. (The Mac Hammerspoon layer is the `Cmd`-based mirror of the same map.)
+
+`Alt+v` is deliberately unbound: Claude Code's clipboard-image paste key on
+Windows is `Alt+v` (Win+Shift+S, then `Alt+v` in the Claude prompt), and a
+global `Alt+v -> Ctrl+v` remap silently breaks it. Paste text with `Ctrl+V`
+(or `Ctrl+Shift+V` inside WezTerm).
 
 ## Daily loop
 
