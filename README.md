@@ -11,10 +11,13 @@ Two things live here:
    config on both machines. Architecture, key cheatsheet, and troubleshooting:
    **[WORKFLOW.md](WORKFLOW.md)**.
 
+One-page keybind reference (Mac + Windows side by side): **[CHEATSHEET.md](CHEATSHEET.md)**.
+
 ## Repo layout
 
 | Path | What it is |
 |------|------------|
+| `CHEATSHEET.md` | one-page keybind reference, Mac + Windows side by side |
 | `WORKFLOW.md` | the dev-workflow doc: architecture, keys, daily loop |
 | `dotfiles/` | Mac source of truth (nix + home-manager) - **also the shared config tree** |
 | `dotfiles/home/.config/nvim/` | Neovim config, shared by both machines |
