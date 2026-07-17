@@ -9,7 +9,7 @@ modifier depending on what you're driving:
 | Layer | Mac | Windows | Drives |
 |---|---|---|---|
 | Cursor (global) | `Cmd` | `Alt` | Move the caret in any app |
-| Multiplexer (herdr) | `Ctrl+Space` prefix, then `h/j/k/l` | same | Panes, tabs, workspaces |
+| Multiplexer (herdr) | `Ctrl+Space` prefix, then `j/k/i/l` | same | Panes, tabs, workspaces |
 | Editor splits (Neovim) | `Ctrl+j/k/i/l` | `Ctrl+j/k/i/l` | Move across vim splits + herdr panes as one grid |
 | Neovim leader | `Space` | `Space` | Editing, LSP, git review |
 
@@ -53,7 +53,7 @@ equivalent is in the last column.
 | Action | Key | Windows note |
 |---|---|---|
 | **Panes** | | |
-| Focus pane ← ↓ ↑ → | `prefix + h/j/k/l` | |
+| Focus pane ← ↓ ↑ → | `prefix + j/k/i/l` | |
 | Split right (side by side) | `prefix + \` | |
 | Split down (stacked) | `prefix + -` | |
 | Close pane | `prefix + x` | |

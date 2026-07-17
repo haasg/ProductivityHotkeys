@@ -43,8 +43,8 @@ layer sends real arrow keys, so nothing shadows the Neovim `Space` leader.
 
 | Key | Action |
 |---|---|
-| `h` / `j` / `k` / `l` | focus pane left / down / up / right |
-| `"` / `%` | split horizontal / vertical |
+| `j` / `k` / `i` / `l` | focus pane left / down / up / right (matches the cursor layer) |
+| `-` / `\` | split down (stacked) / split right (side by side) |
 | `c` / `&` | new tab / close tab |
 | `[` / `]` | previous / next tab (usually typed as `Alt+[` / `Alt+]`, see below) |
 | `w` | workspace picker (searchable list) |
@@ -113,7 +113,7 @@ global `Alt+v -> Ctrl+v` remap silently breaks it. Paste text with `Ctrl+V`
    and a terminal on the right, or `Ctrl-Space w` to jump to an existing
    workspace. The tree arrives on a fresh `agent/<timestamp>` branch (pool trees
    are detached by default, and `gh pr create` needs a branch).
-3. Run `nvim` in the right-hand terminal to review beside Claude; `Ctrl-Space h/l`
+3. Run `nvim` in the right-hand terminal to review beside Claude; `Ctrl-Space j/l`
    to hop between the panes.
 4. Review the agent's work: `<leader>g` (Neogit) to stage hunk-by-hunk and commit,
    Diffview for the branch diff.
