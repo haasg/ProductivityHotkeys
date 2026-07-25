@@ -6,6 +6,21 @@ Roblox / Luau game. Rojo project (`MegaOne.project.json`), Luau source under
 `src/`, Vide for UI, Python and shell tooling under `tools/`. Ships to a live
 Roblox universe with a staging promotion flow (`docs/RELEASE.md`).
 
+## Git policy
+
+**Never commit, stage, or open a PR in this repo. The human does all committing.**
+
+Applies on every branch including `main`, to every skill and every subagent, and
+regardless of what any other section here or in a skill's own steps implies. Run
+the work, run the gates, then stop and leave the changes in the working tree,
+unstaged. Do not `git add`, `git commit`, `git checkout -b`, or `gh pr create`.
+Do not put commit or PR instructions into handoff docs, plan files, or subagent
+prompts. If a workflow appears to require a commit, report that it stopped short
+and say why rather than committing to unblock yourself.
+
+The single exception is an explicit, in-the-moment request from the human to
+commit. Prior approval on an earlier commit never carries forward to the next one.
+
 ## Module vocabulary
 
 - **Unit word:** module (a Luau `ModuleScript`)
@@ -73,7 +88,9 @@ Not present. Skip every batch-conditional rule:
 
 - **Default branch:** `main`
 - **Post-validation command:** `tools/typecheck.sh`
-- **Open a PR on completion:** yes, when on a non-default branch
+- **Open a PR on completion:** no. See **Git policy** - never on any branch.
+- **Branch handling:** work on whatever branch is already checked out. Do not
+  create, switch, or rebase branches as part of a handoff.
 
 ## Build pipeline
 
@@ -138,6 +155,10 @@ Not present. Skip every batch-conditional rule:
 - **Sanctioned gitignored evidence homes:** `report-out/`, `screenshots/`.
 
 ## PR & publish
+
+Reference only, for when the human has explicitly asked for a PR body or an
+evidence bundle. It is never a trigger to commit or open a PR yourself - see
+**Git policy**.
 
 - **Architecture section:** module/subsystem ASCII tree over `src/`, tagged
   NEW/MODIFIED/REMOVED/MOVED. Call out a new subsystem prominently - a new
