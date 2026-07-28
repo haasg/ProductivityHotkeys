@@ -189,6 +189,16 @@ config; the grill does not build the tooling.
   conflicts -> the full `cargo test` gate instead. No live-validation re-run
   requirement.
 
+## Work queue
+
+- **CLI:** `scripts/linear.ps1` (Linear GraphQL wrapper, team CHA; never the
+  Linear MCP). Verbs: `list`, `show <ID>`, `start <ID>`, `done <ID>`,
+  `comment <ID> "text"`. It self-loads `credentials/linear.key` from the main
+  checkout root - no env setup, works from worktrees.
+- **Grabbable states:** `Todo` only, topmost first (`list` is priority-sorted);
+  skip `Backlog`.
+- **Claim verb:** `scripts/linear.ps1 start <ID>` moves it to In Progress.
+
 ## Domain lessons
 
 ### Repo-specific rules
