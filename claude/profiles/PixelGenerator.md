@@ -195,9 +195,28 @@ config; the grill does not build the tooling.
   Linear MCP). Verbs: `list`, `show <ID>`, `start <ID>`, `done <ID>`,
   `comment <ID> "text"`. It self-loads `credentials/linear.key` from the main
   checkout root - no env setup, works from worktrees.
-- **Grabbable states:** `Todo` only, topmost first (`list` is priority-sorted);
-  skip `Backlog`.
+- **Grabbable states:** `Todo` only; skip `Backlog` and `Triage`.
+- **Priority field:** `list` prints `P1`..`P4` (urgent, high, medium, low) or
+  `--` for none, and sorts by it - urgent first, unprioritised last. So the
+  listing order already carries the priority signal; what it cannot carry is
+  blocked-ness or collision.
+- **In-flight signal:** `list` returns started issues alongside open ones, so
+  one call shows both the candidates and the work underway - the started states
+  are `In Progress` and `In Review`. Cross-check locally with
+  `git worktree list` and `.agents/batch/CURRENT`: a batch worker owns the
+  slices under `.agents/batch/<slug>/`, and a ticket touching those crates
+  collides even when Linear shows nothing started.
+- **No relation data.** `show` returns title, priority, state, URL, and
+  description - no blocked-by/blocks links, no labels, no comments. Prerequisites
+  are therefore only visible as prose in the description, and the session stamps
+  posted at claim time are NOT readable back through this CLI. Do not conclude a
+  ticket is unblocked because no link says otherwise; read the description.
 - **Claim verb:** `scripts/linear.ps1 start <ID>` moves it to In Progress.
+- **Note verb:** `scripts/linear.ps1 comment <ID> "<text>"` - carries the
+  session stamp written at claim time. The text is Linear markdown. Pass it as a
+  single-quoted PowerShell here-string (`@'` ... `'@`, closing delimiter at
+  column 0) so the newlines survive and the markdown backticks stay literal
+  instead of being read as PowerShell escapes.
 
 ## Domain lessons
 
