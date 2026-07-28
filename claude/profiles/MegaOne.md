@@ -115,6 +115,13 @@ Not present. Skip every batch-conditional rule:
 - **Worker agent types:** none - use the default workflow subagent.
 - **Decomposition note:** the typecheck is fast and whole-repo, so decomposition
   buys context headroom, NOT build wall-clock - the bar for splitting is high.
+- **Review note:** adversarial review earns its seat on anything crossing the
+  client/server boundary - remotes, replicated state, authority, player-data
+  schema - where exploits and desync hide behind a clean typecheck. Lean
+  design-reviewer-in for player-facing UI/gameplay changes, judged from the
+  CaptureService evidence against the plan's Design intent (and the relevant
+  `docs/*_SPEC.md`). Content additions that follow an existing spec pattern
+  warrant neither.
 
 ## Proof surface
 

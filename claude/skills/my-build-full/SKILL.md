@@ -1,6 +1,6 @@
 ---
 name: my-build-full
-description: Distill the current conversation's aligned plan into a lean executable doc, then run an autonomous Workflow - implement-and-self-prove -> a read-only retrospective that checks the build ran as the plan expected and surfaces plan holes / process issues -> open a PR - using fresh-context subagents. Repo-specific gates, proof surface, and publish mechanics come from the repo's skill profile. Stops and asks if a change is blocked or can't be proven without tooling that doesn't exist yet. Use after a grilling/planning session when you want to go from alignment to a reviewable PR without babysitting.
+description: Distill the current conversation's aligned plan into a lean executable doc, then run an autonomous Workflow - implement-and-self-prove -> plan-selected read-only reviewers (adversarial code / game-design) with confirmed defects fixed in-run -> a read-only retrospective that checks the build ran as the plan expected -> open a PR carrying the judgment findings as numbered Review notes - using fresh-context subagents. Ends with a post-PR triage step: the human picks which notes to address and a fresh subagent applies them on the same branch/PR. Repo-specific gates, proof surface, and publish mechanics come from the repo's skill profile. Stops and asks if a change is blocked or can't be proven without tooling that doesn't exist yet. Use after a grilling/planning session when you want to go from alignment to a reviewable PR without babysitting.
 argument-hint: "<optional extra notes to pass through to the implementer>"
 disable-model-invocation: true
 ---
@@ -14,11 +14,21 @@ to the `Workflow` tool, which orchestrates an autonomous pipeline of fresh-conte
 subagents:
 
 ```
-implement + self-prove --> retro --> open PR
+implement + self-prove --> review --> fix --> retro --> open PR --> post-PR triage (human)
+        |                    |         |        |
+        |                    |         |        +- did the build run as the plan expected? surface plan
+        |                    |         |           holes, proof gaps, process issues, token/time waste -
+        |                    |         |           and was the review decision itself right?
+        |                    |         |           -> Process notes in the PR (advisory, read-only, never blocks)
+        |                    |         |
+        |                    |         +- only when the adversarial review CONFIRMED defects: fix them,
+        |                    |            re-gate, re-prove -> the fixes make it INTO the PR;
+        |                    |            unfixable -> the PR opens as a DRAFT
         |                    |
-        |                    +- did the build run as the plan expected? surface plan holes,
-        |                       proof gaps, process issues, token/time waste -> Process notes in the PR
-        |                       (advisory, read-only, never blocks)
+        |                    +- 0-2 read-only reviewers, picked at plan time per task shape (Step 1's
+        |                       review decision): adversarial code review (confirmed defects -> fix
+        |                       stage; judgment concerns -> Review notes) and/or game-design review of
+        |                       the proof evidence (advisory Review notes); mechanical changes get neither
         |
         +- one agent by default; a decomposed plan (Step 2b) runs it as <=5 piece agents:
            parallel wave (isolated worktrees) > merge > sequential pieces > integrate-and-prove
@@ -32,30 +42,45 @@ The implementer **proves its own work** - it doesn't just pass the check gate, i
 runs the plan's validation scenario on the repo's proof surface and records the
 evidence for the **primary behavior and the plan's listed edge cases**. (In a
 decomposed run - Step 2b - the "implementer" is several piece agents, and the
-proving falls to a final integrate-and-prove stage on the accumulated tree.) There
-is no separate adversarial audit stage by design (removed 2026-07-05: across 31
-runs the independent audit cost ~29% of a run's output tokens to catch one real
-defect); the change ships on the implementer's self-proof, with the retro as the
-skeptical reader in between and the human's PR review as the backstop.
+proving falls to a final integrate-and-prove stage on the accumulated tree.)
 
-The **Retro** phase is the one stage that reads the run rather than writing the
-feature - the only second pair of eyes on the change before the human. A fresh
-read-only agent takes the plan, the implementer's outcome + proof artifact, and
-the shipping diff, and **checks the build proceeded as the plan expected**: every
-Done-when bullet has matching code in the diff and evidence in the proof, the
-proof's claims are consistent with the diff, the validation actually exercised the
-paths the diff moved, and the plan itself held up. It also audits the run's
-**efficiency** from the stage transcripts on disk. Each finding carries a
+**Review is conditional, never flat-rate.** An always-on adversarial audit was
+removed 2026-07-05 (across 31 runs it cost ~29% of a run's output tokens to catch
+one real defect) - that data point is the guardrail this design answers. Step 1
+decides per task which reviewers, if any, earn their seat. Reviewers read
+artifacts (the plan, the diff, the proof evidence) instead of re-driving the game,
+must tie every claimed defect to a concrete failure scenario, and are told an
+empty review of a sound change is a good and honest result. Confirmed defects are
+fixed in-run so they ship fixed inside the PR; judgment-grade findings ride to the
+PR as numbered **Review notes** for the human to triage after the PR opens -
+addressed on the same branch/PR, never a follow-up PR.
+
+The **Retro** phase reads the run rather than writing the feature - on a run with
+no reviewers it is the only second pair of eyes before the human. A fresh
+read-only agent takes the plan, the implementer's outcome + proof artifact, the
+reviewers' findings (when they ran), and the shipping diff, and **checks the
+build proceeded as the plan expected**: every Done-when bullet has matching code
+in the diff and evidence in the proof, the proof's claims are consistent with the
+diff, the validation actually exercised the paths the diff moved, and the plan
+itself held up. It also audits the run's **efficiency** from the stage
+transcripts on disk, and - the meta-review lane - judges whether Step 1's
+**review decision** was right for what actually shipped. Each finding carries a
 **concrete recommendation**. The findings land in the PR as **Process notes** and
 in the run report, as leads for you to investigate separately. It is **advisory
 and read-only** - it never blocks the PR and never changes code.
 
-You fire one command and walk away; you come back to a PR - with process notes
-attached - or to a clear report (blocked, or it can't be proven without new
-tooling you should decide on). Every stage is a **fresh-context subagent seeded
-only by the plan doc + the working-tree diff + the implementer's proof** - never
-the grilling transcript, and never a resumed agent. The implementer's work
-persists on the working tree, so each later stage just reads the diff off disk.
+You fire one command and walk away; you come back to a PR - with Review notes to
+triage and Process notes attached - or to a clear report (blocked, or it can't be
+proven without new tooling you should decide on). The PR is not the finish line:
+the norm is the **post-PR triage step** (see After the pipeline) where the human
+picks which judgment findings to address, a fresh subagent applies them on the
+same branch/PR, and only then it merges - slam-merging a clean run is the
+exception, not the habit. Every stage is a **fresh-context subagent seeded only
+by the plan doc + the working-tree diff + the implementer's proof** - never the
+grilling transcript, and never a resumed agent. The implementer's work persists
+on the working tree, so each later stage just reads the diff off disk - and the
+post-PR follow-up stays on subagents too, so the firing session's context never
+absorbs the diff or the findings artifacts.
 
 ## Step 0 - Load the repo profile (gate)
 
@@ -73,8 +98,10 @@ autonomous pipeline that guesses its own gates is worse than none.
    `ProductivityHotkeys/claude/profiles/<key>.md` together first.
 
 Also resolve `skillDir`: this skill's own directory
-(`$env:USERPROFILE\.claude\skills\my-build-full`), used to hand subagents absolute
-paths to [EVIDENCE.md](./EVIDENCE.md) and [PR-FORMAT.md](./PR-FORMAT.md).
+(`$env:USERPROFILE\.claude\skills\my-build-full`), used to hand subagents the
+absolute path to [PR-FORMAT.md](./PR-FORMAT.md). And `sharedDir`: the shared
+doctrine directory (`$env:USERPROFILE\.claude\skills\_shared`), home of the proof
+doctrine [EVIDENCE.md](../_shared/EVIDENCE.md) that my-handoff also uses.
 
 From the profile's **Build pipeline** section, extract the values Step 2 passes
 into the script: the check gate, iteration tests, full gate, per-piece gate, fmt
@@ -122,9 +149,10 @@ require a grill to have run; it distills whatever alignment exists in the curren
 conversation. If the conversation has little concrete alignment (especially no
 validation strategy - see Step 1), say so plainly but still proceed if asked.
 
-The pipeline ships the implementer's diff as-is - it does **not** simplify or
-refactor the change. To clean up the diff, run `/simplify` or `/code-review` by
-hand on the branch after the PR opens.
+The pipeline ships the implementer's diff hardened only by the fix stage's
+confirmed-defect fixes - it does **not** simplify or refactor the change. To
+clean up the diff, run `/simplify` or `/code-review` by hand on the branch after
+the PR opens.
 
 ## Step 1 - Write the plan doc
 
@@ -172,6 +200,32 @@ wall-clock - the bar for splitting is high"); honor it. Then pick one of three:
   round-trip). Tell the user plainly, give a rough cost note, and work out a
   smaller scope together.
 
+**Review decision - make it here, deliberately.** Review is earned per task,
+never flat-rate (see the removed always-on audit above). Pick 0-2 reviewers from
+this closed menu - never invent other reviewer types:
+
+- **Adversarial code review** - enlist when correctness is subtle enough that a
+  plausible-looking diff can be wrong in ways a green gate won't catch:
+  determinism, algorithms, concurrency/multi-process work, state machines,
+  boundary math, protocol/netcode. It hunts defects in the diff and must back
+  every confirmed one with a concrete failure scenario; confirmed defects are
+  fixed in-run before the PR, judgment-grade concerns become Review notes. Skip
+  it for straightforward wiring and content work.
+- **Game-design review** - enlist when the change moves player-facing behavior,
+  feel, or visuals. It judges the proof evidence against the plan's **Design
+  intent** as gameplay rather than code - and therefore requires that section to
+  be written. Advisory only: everything it produces is a Review note. Skip it
+  when nothing a player experiences changes.
+- **Neither** - the default for mechanical/content-only changes (asset swaps,
+  renames, config, doc moves): the retro alone is the second read.
+
+The profile's **Build pipeline** section may carry a review note (e.g. "most
+changes here are player-facing - lean design-reviewer-in"); honor it. Write the
+picks and a one-line rationale into the plan's **Review decision** line and pass
+them as Step 2's `reviews` args. The retro audits this decision against what
+actually shipped - that feedback loop, not upfront caution, is how the selection
+criteria stay honest.
+
 Sections, in order:
 
 - **Objective** - 1-2 sentences max: what we're building and why. No personas, no
@@ -186,12 +240,22 @@ Sections, in order:
   distilled grilling output; the highest-value section.
 - **Known edge cases & regression risks** - the edges, boundaries, and adjacent
   behaviors that could break or regress, captured during grilling. This is fed to
-  the **implementer** so it builds them in and self-proves them - with no audit
-  stage, an edge nobody names here gets proven by nobody, so err on the side of
-  listing them. An edge the Validation plan cannot reach live must say here how it
+  the **implementer** so it builds them in and self-proves them - review is
+  conditional and may not run, so an edge nobody names here may get proven by
+  nobody; err on the side of listing them. An edge the Validation plan cannot reach live must say here how it
   WILL be evidenced (a named test, or an explicit "accepted untestable" line) -
   decide the gap at plan time instead of leaving the implementer to discover it at
   proof time.
+- **Review decision** - *always.* One line: which reviewers this run gets
+  (adversarial / design / both / none) and why. The retro audits this call
+  against what actually shipped, so record the reasoning, not just the picks.
+- **Design intent** - *design-review runs only; omit otherwise.* The
+  gameplay-facing expectations the evidence will be judged against: what the
+  change should feel and read like on screen, and what would look wrong (scale,
+  readability, pacing, feedback, contradiction with the game's documented
+  design). The design reviewer sees only this doc and the proof evidence - the
+  grill conversation where this intent lives is NOT available to it, so distill
+  the intent here or the review can only shrug.
 - **Executable steps** - an ordered checklist. Each step pairs an action with a
   concrete verification: `N. <action> -> verify: <concrete check>`. A build
   sequence, not a spec to negotiate.
@@ -203,7 +267,8 @@ Sections, in order:
   piece from the plan doc plus its line, so "wire A+B into the app" beats
   "part 3".
 - **Validation plan** - *required.* How this change will be **proven** to do what
-  it set out to, written against the doctrine in [EVIDENCE.md](./EVIDENCE.md) and
+  it set out to, written against the doctrine in
+  [EVIDENCE.md](../_shared/EVIDENCE.md) and
   the repo's proof drivers in the profile's **Proof surface** section. The
   implementer runs this to self-prove the primary behavior and the listed edges;
   it is the only live validation the run gets - so it must be concrete and
@@ -251,6 +316,7 @@ args: {
   notes: "<skill arguments, or empty>",
   profilePath: "<abs path to the profile file>",
   skillDir: "<abs path to this skill's directory>",
+  sharedDir: "<abs path to the shared doctrine directory>",
   gates: {
     check: "<profile: check gate, verbatim>",
     iter:  "<profile: iteration tests, verbatim>",
@@ -259,9 +325,14 @@ args: {
     fmt:   "<profile: fmt command, or empty string>"
   },
   doctrine: "<profile: doctrine files, comma-separated repo paths, or empty>",
+  reviews: { adversarial: <true|false>, design: <true|false> },
   agents: { impl: "<agent type or null>", light: "<agent type or null>" }
 }
 ```
+
+`reviews` carries Step 1's review decision verbatim - both false (or the key
+omitted) means no Review phase, which is the correct call for mechanical work,
+not a degraded run.
 
 For a decomposed build (Step 1's decomposition decision) additionally pass
 `pieces`; see Step 2b. Same script.
@@ -282,9 +353,10 @@ delivery failure stops loud instead of self-healing into the wrong change.
 ```javascript
 export const meta = {
   name: 'my-build-full',
-  description: 'Implement and self-prove an aligned plan doc, retro the run for plan holes and process issues, open a PR',
+  description: 'Implement and self-prove an aligned plan doc, review it per the plan\'s review decision (fixing confirmed defects in-run), retro the run, open a PR',
   phases: [
     { title: 'Implement' },
+    { title: 'Review' },
     { title: 'Retro' },
     { title: 'PR' },
   ],
@@ -297,9 +369,11 @@ const SLUG = A.slug
 const NOTES = A.notes || ''
 const PROFILE = A.profilePath
 const SKILLDIR = A.skillDir
+const SHAREDDIR = A.sharedDir
 const G = A.gates || {}
 const DOCTRINE = A.doctrine || ''
 const AGENTS = A.agents || {}
+const REV = A.reviews || {}   // Step 1's review decision; both false = no Review phase, deliberately.
 const MODEL = A.model || 'opus'   // build stages pin to Opus by default; override only via an explicit args.model.
 // Decomposed build (Step 2b): pieces = { parallel: [...], sequential: [...] }; absent/empty = single-pass.
 let PAR = (A.pieces && Array.isArray(A.pieces.parallel)) ? A.pieces.parallel : []
@@ -307,7 +381,7 @@ let SEQ = (A.pieces && Array.isArray(A.pieces.sequential)) ? A.pieces.sequential
 if (PAR.length === 1) { SEQ = [PAR[0], ...SEQ]; PAR = [] }   // a "parallel wave" of one is just the first sequential piece - skip the worktree overhead
 const TOTAL = PAR.length + SEQ.length
 if (!PLAN) throw new Error('my-build-full: planPath missing from args - pass args as a real object, not a stringified one (see Step 2).')
-if (!PROFILE || !SKILLDIR) throw new Error('my-build-full: profilePath/skillDir missing from args - Step 0 resolves both.')
+if (!PROFILE || !SKILLDIR || !SHAREDDIR) throw new Error('my-build-full: profilePath/skillDir/sharedDir missing from args - Step 0 resolves all three.')
 if (!G.check || !G.full) throw new Error('my-build-full: gates.check/gates.full missing - the profile\'s Build pipeline section is incomplete; fix the profile, do not guess gates.')
 if (TOTAL > 5) throw new Error('my-build-full: decomposed build is capped at 5 pieces - if the seams yield more, the objective is too big for one PR; rescope with the user (see Step 2b).')
 
@@ -328,6 +402,42 @@ const IMPL_SCHEMA = {
   },
 }
 
+const ADV_SCHEMA = {
+  type: 'object',
+  required: ['summary', 'findingsPath', 'mustFix', 'notes'],
+  additionalProperties: false,
+  properties: {
+    summary: { type: 'string', description: '1-2 sentences: the headline, or that the diff looks sound' },
+    findingsPath: { type: 'string', description: 'path to the full findings markdown in temp' },
+    mustFix: {
+      type: 'array',
+      description: 'CONFIRMED defects only - each with a failure scenario the fix stage will re-check; judgment-grade concerns belong in notes',
+      items: {
+        type: 'object',
+        required: ['title', 'repro'],
+        additionalProperties: false,
+        properties: {
+          title: { type: 'string', description: 'one line naming the defect' },
+          repro: { type: 'string', description: 'the concrete failure scenario: specific inputs/state -> the wrong observable outcome, traced through the diff' },
+          pointer: { type: 'string', description: 'file:line or diff hunk' },
+        },
+      },
+    },
+    notes: { type: 'array', items: { type: 'string' }, description: 'judgment-grade findings for the PR Review notes, one line each: the concern + a pointer' },
+  },
+}
+
+const DESIGN_SCHEMA = {
+  type: 'object',
+  required: ['summary', 'findingsPath', 'notes'],
+  additionalProperties: false,
+  properties: {
+    summary: { type: 'string', description: '1-2 sentences: the headline, or that the evidence matches the design intent' },
+    findingsPath: { type: 'string', description: 'path to the full findings markdown in temp' },
+    notes: { type: 'array', items: { type: 'string' }, description: 'gameplay-judgment findings for the PR Review notes, one line each: what looks off + which evidence item (or missing capture) shows it' },
+  },
+}
+
 const RETRO_SCHEMA = {
   type: 'object',
   required: ['summary', 'reviewPath'],
@@ -342,7 +452,7 @@ const RETRO_SCHEMA = {
 // Shared preamble: repo doctrine + the proof doctrine + the repo profile. Every implementing stage gets it.
 const READS = `This repo's standing agent instructions (CLAUDE.md / AGENTS.md) apply.
 Before implementing, READ IN FULL and follow - open them yourself, do not assume they are in your context:
-${DOCTRINE ? `- this repo's doctrine files: ${DOCTRINE}\n` : ''}- the shared proof doctrine at ${SKILLDIR}/EVIDENCE.md - live proof over stand-ins, screenshots/video defaults, the human-input-path rule, unreachable visuals, missing tooling, the test gate vs. iteration loop, evidence hygiene
+${DOCTRINE ? `- this repo's doctrine files: ${DOCTRINE}\n` : ''}- the shared proof doctrine at ${SHAREDDIR}/EVIDENCE.md - live proof over stand-ins, screenshots/video defaults, the human-input-path rule, unreachable visuals, missing tooling, the test gate vs. iteration loop, evidence hygiene
 - the "Proof surface" section of the repo profile at ${PROFILE} - this repo's proof drivers, readiness checks, debug levers, evidence homes, and hard-won evidence lessons; it is binding
 Register every NEW source file with \`git add -N <file>\` the moment you create it (standing doctrine: new-file
 visibility) - an unregistered new file is invisible to the \`git diff\` later stages review.`
@@ -493,11 +603,90 @@ Return exactly one outcome:
 - "blocked": you cannot reach green, or the accumulated diff needs real rework. Set blocker. Do NOT guess or fake success.
 ${NOTES ? `\nExtra notes: ${NOTES}` : ''}`
 
-const retroPrompt = (trajectory, implProofPath) => `You are a retrospective on the build pipeline run that just happened - a critical read of how the RUN went, not a
+const advPrompt = (implProofPath) => `You are an ADVERSARIAL CODE REVIEW of the uncommitted change on this working tree - a defect hunt, not a style
+review. You are READ-ONLY: do not modify the tree, do not run live validation, do not write anything into the repo.
+
+The plan is at ${PLAN} - read it fully. The implementer's self-proof is at ${implProofPath} (in temp) - read it to see
+what was claimed and proven; what it did NOT exercise is where defects hide. See the change itself with \`git diff\`,
+cross-checked against \`git status --porcelain\` - any untracked (\`??\`) source file is part of the change the diff
+does not show; read it directly.
+
+Hunt for real defects a green gate would miss: logic errors; boundary/edge failures (start from the plan's **Known
+edge cases & regression risks** - is each actually handled in code, not just claimed?); violated **Constraints &
+decisions**; regressions in adjacent behavior the diff touches; state that can go inconsistent across the paths the
+diff moved; error paths that swallow failures. Trace each suspicion through the actual code until it is confirmed or
+dies - never report a hunch as a defect.
+
+Sort what survives into exactly two buckets:
+- **mustFix** - CONFIRMED defects only. Each needs a concrete failure scenario (specific inputs/state -> the wrong
+  observable outcome) traced through the diff, plus a file:line pointer. The fix stage will reproduce your scenario,
+  fix it, and re-check it - a vague or wrong repro burns a whole stage, so if you cannot state the scenario
+  concretely, it is not a mustFix.
+- **notes** - judgment calls: a risky pattern, an edge you suspect but could not confirm, a construction likely to
+  break under a change the plan implies is coming. One line each: the concern + a pointer. These go to the human in
+  the PR's Review notes; do not inflate a note into a mustFix to make it "count".
+
+Write the full findings (what / why it matters / pointer, plus the repro for each mustFix) to a markdown artifact in
+the OS temp dir (NOT the repo); return its path as findingsPath. This review costs tokens too: do NOT pad, do NOT
+restate the diff, do NOT invent findings to look thorough - empty mustFix and empty notes on a sound diff is a good
+and honest result. Style, naming, and simplification are OUT of scope (the human runs /simplify separately).`
+
+const designPrompt = (implProofPath) => `You are a GAME-DESIGN REVIEW of the change proven on this working tree - you judge the shipped behavior as GAMEPLAY,
+not as code. You are READ-ONLY: do not modify the tree, do not drive the game, do not write anything into the repo.
+
+Read the plan at ${PLAN} fully - **Objective** and **Design intent** are your rubric - and follow its **Context
+references** into the game's design docs where they bear on this change. Then read the implementer's self-proof at
+${implProofPath} (in temp) and STUDY its evidence: view every screenshot yourself; for clips, extract and view frames
+(e.g. with ffmpeg) rather than trusting captions. Skim \`git diff --stat\` only to know what moved - the diff is not
+your subject, the observed behavior is.
+
+Judge what the evidence shows against the Design intent, as a designer would: does it read correctly on screen
+(scale, contrast, visual hierarchy)? does the behavior make sense for the player (pacing, feedback, fairness,
+affordance)? does anything contradict the game's documented design language? does an edge case produce something
+technically correct but wrong as gameplay? Evidence too thin to judge is itself a finding - "no capture shows X, so
+the intent cannot be checked" doubles as a proof gap; say it plainly.
+
+Everything you produce is ADVISORY judgment for the human. Return one line per finding in notes (what looks off +
+which evidence item or missing capture shows it), with the fuller reasoning in a markdown artifact in the OS temp dir
+(NOT the repo); return its path as findingsPath. Do NOT pad or invent findings to look thorough - an empty review of
+a change whose evidence matches its intent is a good and honest result.`
+
+const fixPrompt = (adv, implProofPath) => `You are the FIX stage: the adversarial review CONFIRMED defect(s) in the uncommitted change on this working tree,
+each with a failure scenario. Fix exactly these - nothing else.
+${READS}
+The plan is at ${PLAN}; the review's full findings are at ${adv.findingsPath}; the implementer's self-proof is at
+${implProofPath} (both in temp). The confirmed defects:
+${adv.mustFix.map((f, i) => `${i + 1}. ${f.title}${f.pointer ? ` [${f.pointer}]` : ''}\n   repro: ${f.repro}`).join('\n')}
+
+For each: reproduce or trace the failure scenario FIRST - if it does not actually fail, say so in your summary and
+leave that code alone; do not "fix" a non-bug. Then fix it minimally, honoring the plan's **Constraints & decisions**
+and **Out of scope**. Do not refactor beyond the fix, and do not touch the review's judgment-grade notes - those are
+the human's call.
+
+Then re-prove the tree:
+1. Check gate clean: ${G.check}. Iteration tests green: ${G.iter || G.check}.
+2. Re-run the FULL gate ONCE - ${G.full} - the implementer's earlier full-gate run no longer covers this tree. Run it
+   as ONE synchronous foreground shell call with a generous timeout, output captured to a file.
+3. Re-check each defect's failure scenario now behaves correctly - live on the proof surface where the scenario is
+   live-reachable, per EVIDENCE.md - and re-run any part of the plan's Validation plan your fix touched, refreshing
+   the affected screenshots.
+4. Append a "Fix addendum" to the proof artifact at ${implProofPath}: each defect, the fix, and the concrete
+   re-checked result (with any refreshed capture paths and one-line captions).
+
+Leave ALL changes UNCOMMITTED - do not commit, push, or write anything into the repo.
+
+Return exactly one outcome:
+- "proven": every confirmed defect fixed (or shown not to reproduce, and said so in the summary), gates green,
+  re-checks recorded in the Fix addendum.
+- "blocked": a defect cannot be fixed without real rework, or the fix would contradict the plan - set blocker naming
+  which defect(s) and why. Leave any partial fixes on the tree; the PR will open as a DRAFT carrying your blocker.`
+
+const retroPrompt = (trajectory, implProofPath, reviewArtifacts) => `You are a retrospective on the build pipeline run that just happened - a critical read of how the RUN went, not a
 rewrite of the feature. Do NOT touch code, do NOT modify the working tree, do NOT write anything into the repo. You
 are read-only.
 
-You are the only second pair of eyes on this change before a human reviews the PR - there is no audit stage. Your job
+On a run without reviewers you are the only second pair of eyes on this change before a human reviews the PR; on a
+reviewed run the reviewers' findings are raw material for you - audit around them, do not re-litigate them. Your job
 is to check the build proceeded as the plan expected and to surface holes - in the plan, in the proof, or in the
 process - so the human knows where to look and can improve the build skill (${SKILLDIR}/SKILL.md) or the repo profile
 (${PROFILE}). Findings are advisory: they never block the PR.
@@ -508,12 +697,12 @@ ${trajectory}
 Raw material (read all of it):
 - the plan: ${PLAN}
 - the implementer's self-proof: ${implProofPath} (in temp - do NOT copy it into the repo)
-- the repo profile at ${PROFILE} (the gates and proof drivers the stages were told to use)
+${reviewArtifacts ? `${reviewArtifacts}\n` : ''}- the repo profile at ${PROFILE} (the gates and proof drivers the stages were told to use)
 - the shipping diff: run \`git diff\` to see exactly what will land, then cross-check \`git status --porcelain\` - any
   untracked (\`??\`) source file is part of the change that the diff does not show (the worker should have
   \`git add -N\`-ed it; if it didn't, read the file directly and flag the miss as a finding).
 
-Three checks are load-bearing - do them concretely, bullet by bullet, not impressionistically:
+Four checks are load-bearing - do them concretely, bullet by bullet, not impressionistically:
 1. **Done-when conformance.** Walk the plan's **Done when** and **Executable steps**: does the diff contain the code
    for each item, and does the proof contain evidence for each? An explicitly planned behavior silently missing while
    everything else was green HAS shipped from this pipeline before - it is the single most valuable thing you can
@@ -543,6 +732,12 @@ Three checks are load-bearing - do them concretely, bullet by bullet, not impres
    Include the compact per-stage table (stage | wall-clock | output tokens | tool calls | longest wait) in your
    findings artifact EVEN IF nothing is anomalous - it is the run-over-run trend data the human folds back into the
    skill. If you cannot locate the run directory, say so in the findings instead of skipping silently.
+4. **Review-decision audit** (a paragraph, not a stage). The plan's **Review decision** line names which reviewers
+   ran and why. Judge that call against what actually shipped: a defect or design miss visible in the diff/evidence
+   that a SKIPPED reviewer exists to catch, a reviewer that ran on a change too mechanical to need it, a design
+   review hamstrung by a thin or missing **Design intent** section, or an adversarial mustFix whose repro turned out
+   vague enough to burn the fix stage. Each is a process finding whose recommendation targets the Step 1 selection
+   criteria or the profile's review note - this audit is the feedback loop that keeps conditional review honest.
 
 Beyond those, follow whatever actually looks off in THIS run - a plan hole (an ambiguity the implementer had to guess
 through, a constraint the diff quietly contradicts, an Out-of-scope line it crossed), a step that cost tokens without
@@ -560,7 +755,7 @@ and stop; a short or near-empty review is a fine and honest result.
 Return reviewPath, a 2-3 sentence summary for the run report (the headline of what you surfaced, or that nothing
 notable came up), and topFinding - the single most worth-investigating item paired with its recommended action, if any.`
 
-const prPrompt = (implProofPath, reviewPath) => `Open a PR for the change on the current working tree.
+const prPrompt = (implProofPath, reviewPath, reviewNotes, fixedTitles, draftReason) => `Open a PR for the change on the current working tree.
 Follow ${SKILLDIR}/PR-FORMAT.md for the branch/commit/PR-body conventions, AND the "PR & publish" section of the repo
 profile at ${PROFILE} for this repo's specifics - the architecture-section format and vocabulary, the Try-it command,
 the evidence bundle location, and the publish command with its credential source and fallback. Read both first; the
@@ -583,7 +778,7 @@ ${G.fmt ? `- Fmt before the commit: ${G.fmt}. If it reflows a file outside the l
   change and the incoming work - then run the full gate instead (${G.full}): the resolution is code no stage has
   tested. The profile's PR & publish section may additionally require re-running live validation - honor it. Merge
   brought in nothing -> nothing to do.
-- Open a ready-for-review PR against the default branch with \`gh\`. If gh is not authenticated, skip the PR and the
+- Open a ${draftReason ? `DRAFT PR (\`gh pr create --draft\`) - unresolved must-fix findings exist: ${draftReason}. Lead the Review notes section with that, verbatim` : 'ready-for-review PR'} against the default branch with \`gh\`. If gh is not authenticated, skip the PR and the
   publish, leave the commit on the branch, and report "PR not opened: gh not authed".
 - **Publish the evidence** once the PR number exists, exactly per the profile's publish command and fallback. On
   success, \`gh pr edit\` the review URL into the Validation section. If publishing fails, keep the PR, reference the
@@ -595,7 +790,14 @@ ${G.fmt ? `- Fmt before the commit: ${G.fmt}. If it reflows a file outside the l
   running after 15m") - a persistently red PR is the human's call, never a reason to loop or close the PR.
 - PR body, assembled from the plan + the proof, per PR-FORMAT.md's baseline sections (Objective, Architecture
   changes in the profile's format, Try it from the profile, Validation as link + claim lines) plus:
-  - **Process notes (for follow-up)** - inline the contents of the retrospective findings at ${reviewPath} verbatim.
+  - **Review notes (triage before merge)** - ${reviewNotes.length ? `EXACTLY these items, numbered 1..${reviewNotes.length} in this order (the numbering is
+    how the human refers to them post-PR; do not reorder, reword, merge, or drop any):
+${reviewNotes.map((n, i) => `    ${i + 1}. ${n}`).join('\n')}
+    Preface the list with one line: these are judgment findings to triage before merge - addressed on THIS
+    branch/PR, or consciously waved through; never a follow-up PR.` : ((REV.adversarial || REV.design) ? 'the reviewers ran and surfaced no judgment findings - say so in one line.' : 'omit this section entirely; the run had no reviewers (per the plan\'s Review decision).')}
+${fixedTitles.length ? `  - Add one line at the top of the Validation section: ${fixedTitles.length} defect(s) confirmed by the adversarial
+    review were fixed in-run and re-proven (see the proof's Fix addendum): ${fixedTitles.join('; ')}.
+` : ''}  - **Process notes (for follow-up)** - inline the contents of the retrospective findings at ${reviewPath} verbatim.
     These are what the run surfaced about the plan and the pipeline itself - plan holes, proof gaps, process leaks -
     for a human to investigate separately and fold back into the skill or profile; leads, not blockers. Do NOT commit
     the artifact; paste its text. If the findings are empty, write "No notable process issues surfaced this run."
@@ -633,16 +835,49 @@ if (!impl) return { status: 'blocked', blocker: 'implement stage returned no res
 if (impl.outcome === 'blocked') return { status: 'blocked', blocker: impl.blocker, summary: impl.summary }
 if (impl.outcome === 'cant_prove') return { status: 'cant_prove', missingTooling: impl.missingTooling, summary: impl.summary }
 
-// The independent audit stage was removed (2026-07-05 review: 31 runs, one real behavior catch, ~29% of a run's
-// output tokens). The Retro is the only second read of the diff before the human, so it ALWAYS runs; its
-// load-bearing checks are Done-when conformance and proof-vs-diff consistency.
+// Review is conditional per Step 1's review decision - the always-on audit it replaces was removed 2026-07-05
+// (31 runs, one real catch, ~29% of a run's output tokens). Reviewers are read-only and artifact-based; only a
+// confirmed, repro-backed defect spins up the fix stage. A dead review or a failed fix never kills the run - it
+// downgrades the PR to a draft, so the work and the evidence still reach the human.
+let adv = null, design = null, fix = null, draftReason = ''
+if (REV.adversarial || REV.design) {
+  phase('Review')
+  const [a, d] = await parallel([
+    () => REV.adversarial ? agent(advPrompt(impl.proofPath), { phase: 'Review', label: 'review:adversarial', schema: ADV_SCHEMA, model: MODEL, ...AG(AGENTS.light) }) : null,
+    () => REV.design ? agent(designPrompt(impl.proofPath), { phase: 'Review', label: 'review:design', schema: DESIGN_SCHEMA, model: MODEL, ...AG(AGENTS.light) }) : null,
+  ])
+  adv = a; design = d
+  if (REV.adversarial && !adv) draftReason = 'the adversarial review stage died - defect status unknown'
+  if (adv && adv.mustFix.length) {
+    fix = await agent(fixPrompt(adv, impl.proofPath), { phase: 'Review', label: 'fix', schema: IMPL_SCHEMA, model: MODEL, ...AG(AGENTS.impl) })
+    if (!fix || fix.outcome !== 'proven') draftReason = fix ? (fix.blocker || fix.summary) : 'the fix stage died with confirmed defects outstanding'
+  }
+}
+const reviewNotes = [
+  ...(adv ? adv.notes.map(n => `[code] ${n}`) : []),
+  ...(design ? design.notes.map(n => `[design] ${n}`) : []),
+]
+const fixedTitles = (fix && fix.outcome === 'proven' && adv) ? adv.mustFix.map(f => f.title) : []
+
+// The Retro still ALWAYS runs; its load-bearing checks are Done-when conformance and proof-vs-diff consistency,
+// plus the review-decision audit on reviewed runs.
 phase('Retro')
-const trajectory = `- Implement: ${impl.outcome}.${TOTAL ? ` (decomposed: ${PAR.length} parallel + ${SEQ.length} sequential pieces, then integrate-and-prove)` : ''} ${impl.summary}`
-const retro = await agent(retroPrompt(trajectory, impl.proofPath), { phase: 'Retro', label: 'retro', schema: RETRO_SCHEMA, model: MODEL, ...AG(AGENTS.light) })
+const trajLines = [
+  `- Implement: ${impl.outcome}.${TOTAL ? ` (decomposed: ${PAR.length} parallel + ${SEQ.length} sequential pieces, then integrate-and-prove)` : ''} ${impl.summary}`,
+]
+if (REV.adversarial) trajLines.push(adv ? `- Adversarial review: ${adv.mustFix.length} confirmed defect(s), ${adv.notes.length} judgment note(s). ${adv.summary}` : '- Adversarial review: stage died (no result).')
+if (REV.design) trajLines.push(design ? `- Design review: ${design.notes.length} judgment note(s). ${design.summary}` : '- Design review: stage died (no result).')
+if (adv && adv.mustFix.length) trajLines.push(fix ? `- Fix: ${fix.outcome}. ${fix.summary}` : '- Fix: stage died (no result).')
+const trajectory = trajLines.join('\n')
+const reviewArtifacts = [
+  adv ? `- the adversarial review findings: ${adv.findingsPath} (in temp)` : null,
+  design ? `- the design review findings: ${design.findingsPath} (in temp)` : null,
+].filter(Boolean).join('\n')
+const retro = await agent(retroPrompt(trajectory, impl.proofPath, reviewArtifacts), { phase: 'Retro', label: 'retro', schema: RETRO_SCHEMA, model: MODEL, ...AG(AGENTS.light) })
 
 phase('PR')
-const pr = await agent(prPrompt(impl.proofPath, retro.reviewPath), { phase: 'PR', label: 'open-pr', model: MODEL, ...AG(AGENTS.light) })
-return { status: 'pass', pr, retroFinding: retro.topFinding || '' }
+const pr = await agent(prPrompt(impl.proofPath, retro.reviewPath, reviewNotes, fixedTitles, draftReason), { phase: 'PR', label: 'open-pr', model: MODEL, ...AG(AGENTS.light) })
+return { status: 'pass', pr, retroFinding: retro.topFinding || '', reviewNotes, fixedDefects: fixedTitles, draft: !!draftReason, draftReason }
 ```
 
 ## Step 2b - Decomposed build (pieces)
@@ -689,15 +924,12 @@ It is the *same* Step 2 Workflow, driven by data. Decomposing the *build* is sti
 
 ## After the pipeline
 
-When the Workflow completes, report in one or two sentences based on its return
-value:
+When the Workflow completes, report compactly based on its return value:
 
 - `status: pass` -> the PR URL and its CI-tail state (or branch name if `gh`
-  wasn't authed). Relay what the Retro surfaced: quote `retroFinding` (the top
-  thing worth investigating) if present, and point to the **Process notes** in the
-  PR body for the full list - these are leads to look into separately and fold
-  back into the skill or the profile, not blockers. A Done-when bullet the retro
-  found unmet is the lead to check first when reviewing the diff.
+  wasn't authed), and whether it opened as a **DRAFT** (`draft: true`) - if so,
+  lead with `draftReason`: unresolved must-fix findings are the first thing the
+  human must look at. Then run the **post-PR triage** below.
 - `status: blocked` -> no PR; the implementer hit a blocker it wouldn't guess
   past. Quote `blocker` so the user can resolve the ambiguity or fix the plan. A
   decomposed run's summary names the failing piece (and, for a parallel wave, the
@@ -706,3 +938,39 @@ value:
   that validation surface next.
 
 Don't poll or babysit while it runs; you're notified when it finishes.
+
+## Post-PR triage (the human's review pass)
+
+The PR arriving is not the end of the workflow: applying review to the PR before
+merge is the norm; slam-merging a clean run is the exception. Keep the firing
+session lean - relay compactly from the return value, spawn fresh subagents for
+any follow-up work, and never read the findings artifacts, the proof, or the PR
+diff into the main context.
+
+1. **Relay the triage list.** Print `reviewNotes` verbatim, numbered exactly as
+   returned (the numbering matches the PR's Review notes section), `fixedDefects`
+   in one line ("fixed in-run: ..."), and `retroFinding` with a pointer to the
+   PR's Process notes for the rest. Empty everything -> say the run came back
+   clean and the PR is ready for the human's own read.
+2. **The human picks** which notes to address (by number), which to consciously
+   skip, plus anything from their own read of the PR. Do not pre-filter, rank, or
+   advocate - the worth-addressing judgment is precisely the part of this
+   workflow that stays human. Wait for their reply; there is nothing to do
+   proactively here.
+3. **Address on the SAME branch/PR - never a follow-up PR.** On selection, spawn
+   ONE fresh subagent (Agent tool; the profile's impl worker type if it names
+   one) seeded with: the PR number and branch, the selected note texts verbatim,
+   the plan path, and the profile + EVIDENCE.md paths. Its instructions: make the
+   selected changes on the PR branch, honoring the plan's Constraints & decisions;
+   run the check gate and iteration tests, plus the full gate once if the change
+   is more than trivial; re-prove live any proof claim it touched and refresh the
+   affected evidence; if media changed, rebuild the evidence bundle and re-publish
+   per the profile (fresh immutable URL -> `gh pr edit` it in); push to the same
+   branch; comment on the PR naming which numbered items it addressed. Relay its
+   report in a sentence or two. Repeat as the human asks for more rounds.
+4. **Process notes are a different lane.** Retro findings are edits to this skill
+   or the repo profile, not to the branch - handle them in-session with the human
+   when they take one up, or leave them as leads.
+5. **Merging stays the human's call.** Never merge, close, or mark the draft
+   ready yourself - a draft PR converts only after its must-fix findings are
+   resolved on the branch.

@@ -59,7 +59,7 @@ this document and the profile differ, the profile wins.
 ## PR body - baseline sections
 
 Keep prose minimal; let the images carry the proof. (SKILL.md layers its own extra
-section on top - Process notes.)
+sections on top - Process notes, and Review notes on reviewed runs.)
 
 - **Objective** - 1-2 sentences.
 - **Architecture changes** - how the structure shifted, as an ASCII tree in a

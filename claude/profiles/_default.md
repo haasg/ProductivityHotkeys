@@ -81,6 +81,8 @@ asks. A real profile fills in:
 - **Worker agent types:** impl / light agent types from `.claude/agents/`, or
   none for the default workflow subagent
 - **Decomposition note:** optional guidance on when splitting pays here
+- **Review note:** optional guidance on which reviewers (adversarial code /
+  game-design) tend to pay off in this repo, feeding Step 1's review decision
 
 ## Proof surface
 

@@ -132,6 +132,14 @@ config; the grill does not build the tooling.
   build; parallelize only substantial pieces - two big independent crates is a
   clear win, three small pieces in parallel is strictly worse than one sequential
   context doing them all.
+- **Review note:** adversarial review earns its seat on engine-line work -
+  determinism, cross-process/harness IPC, saved-state/snapshot format, worldgen
+  and other algorithmic cores - where a green gate can hide a subtle wrong.
+  Game-content slices are mostly player-facing, so lean design-reviewer-in for
+  anything a player sees or feels (screens, beats, pacing, combat/economy
+  behavior); the plan's Design intent should cite the game's design docs via
+  `docs/CONTEXT-MAP.md`. Pure mechanical content (asset swaps, copy edits,
+  tuning-constant changes) warrants neither.
 
 ## Proof surface
 
