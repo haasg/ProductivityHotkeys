@@ -23,45 +23,31 @@ work-queue tooling comes from a profile.
 
 Then, using the queue CLI the profile names:
 
-1. **Pick the ticket.** If the invocation argument names an issue (e.g.
-   `CHA-12`), that is the ticket - fetch it in full and take it even if the
-   checks below flag it, but still run them and say what they found. A named
-   ticket is honoured, never silently overridden.
+1. **Pick the ticket - in a subagent.** Selection is delegated to the
+   `my-ticket-picker` agent (defined next to this skill, junctioned into
+   `~/.claude/agents`; pinned to low-effort Opus so picking never burns
+   premium-model credits). It owns the selection doctrine: shortlist the queue,
+   read candidates in full, disqualify blocked or colliding ones, rank the
+   survivors. Spawn it synchronously (`subagent_type: my-ticket-picker`,
+   `run_in_background: false`) and pass, verbatim:
 
-   Otherwise choose one. The aim is a ticket that can actually be worked right
-   now - not merely the one at the top of the list:
+   - the profile's **Work queue** section,
+   - the repo root path (the queue CLI runs from there),
+   - the invocation argument, if it names an issue (e.g. `CHA-12`). A named
+     ticket is honoured, never silently overridden - the picker still runs its
+     checks and reports what they flagged.
 
-   a. **Shortlist.** List the queue and take the top ~5 issues in the profile's
-      grabbable state(s) as candidates, in the CLI's own order. From the same
-      listing, note every issue in a started state; that, plus any local
-      in-flight signal the profile names, is the work already underway.
-   b. **Read.** Fetch each candidate in full, and each started issue too - a
-      one-line title badly under-describes what a ticket touches.
-   c. **Disqualify.** Drop a candidate that hits either:
-      - **Unmet prerequisite.** Its description names another issue as a
-        precondition - "blocked by", "depends on", "after X lands", "once X
-        ships". Resolve that issue's state; if it is not done or cancelled, drop
-        the candidate. Judge from the sentence, not the bare ID: "see CHA-3 for
-        context" is a pointer, not a dependency. An unmet prerequisite that is
-        itself grabbable is a hint - consider it as a candidate in its own right.
-      - **Collision with in-flight work.** It would edit the same ground as
-        something already started. Same file, same module boundary, or the same
-        contract or data shape disqualifies. Merely the same broad subsystem is
-        a warning to weigh, not a veto.
-   d. **Rank the survivors.** Priority field first, as the tracker reports it.
-      Then importance you can actually justify from the text: it unblocks other
-      queued tickets, it fixes something broken or user-visible, or later
-      candidates name it as their prerequisite. Then the CLI's own order as the
-      tiebreak.
-   e. **Pick the top, and say why in one line** - including the higher-ranked
-      candidate you skipped and what disqualified it. This ranking is a
-      heuristic on thin evidence, so the skip has to be visible; that is what
-      lets the user overrule it by naming a ticket instead.
-   f. **Nothing survives?** Widen to the next batch of candidates once. If that
-      is also empty, do not quietly claim a colliding or blocked ticket - report
-      the shortlist with each rejection reason and ask which to take.
+   The picker returns either the chosen ticket - ID, title, URL, priority, full
+   description, and a one-line rationale naming any higher-ranked candidate it
+   skipped and why - or a no-survivor report listing each candidate with its
+   rejection reason. Relay the rationale to the user; the skip has to be
+   visible, since naming a ticket is how the user overrules the heuristic. On a
+   no-survivor report, present it and ask which ticket to take. If nothing is
+   grabbable at all, report that and stop.
 
-   If nothing is grabbable at all, report that and stop.
+   If the `my-ticket-picker` agent type is unavailable, read its definition
+   file and run the same doctrine inline, and say so - never silently invent a
+   different selection scheme.
 2. **Claim it.** Move it to In Progress.
 3. **Stamp this session on it.** Post a note on the ticket naming the Claude
    session that claimed it, so a session lost later can be found and resumed

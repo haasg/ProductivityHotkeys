@@ -15,6 +15,8 @@ claude/
     PixelGenerator.md
     MegaOne.md
     piano-practice.md
+  agents/          shared agent types the skills spawn, junctioned to ~/.claude/agents
+    my-ticket-picker.md
 ```
 
 ## Why the `my-` prefix
@@ -53,6 +55,7 @@ PowerShell:
 ```powershell
 $src = "C:\repo\ProductivityHotkeys\claude"
 New-Item -ItemType Junction -Path "$env:USERPROFILE\.claude\skill-profiles" -Target "$src\profiles"
+New-Item -ItemType Junction -Path "$env:USERPROFILE\.claude\agents" -Target "$src\agents"
 Get-ChildItem "$src\skills" -Directory | ForEach-Object {
   New-Item -ItemType Junction -Path "$env:USERPROFILE\.claude\skills\$($_.Name)" -Target $_.FullName
 }
@@ -62,7 +65,11 @@ Junctions, not symlinks: they need no Developer Mode and no elevation on Windows
 
 Skills are junctioned individually rather than junctioning the whole
 `~/.claude/skills` directory, so the other global skills that are not yet
-consolidated stay where they are and keep working.
+consolidated stay where they are and keep working. `agents/` is junctioned
+whole, like `profiles/` - agent definitions are single files, and junctions are
+directory-only, so a machine that already has a local `~/.claude/agents` should
+first move those local agents into this repo (they get history and sync for
+free) and then junction the directory.
 
 ## Status
 
@@ -71,7 +78,7 @@ consolidated stay where they are and keep working.
 | `my-handoff` | Consolidated from `PixelGenerator/.claude/skills/handoff` (Jul 6, the richest of four forks) |
 | `my-grill` | Consolidated from `PixelGenerator/.claude/skills/grill` (Jul 22, the newest of seven forks) |
 | `my-build-full` | Consolidated from `PixelGenerator/.claude/skills/build-full` (Jul 22) + the MegaOne fork (Jul 20). One static Workflow script; gates/proof/publish flow in from the profile as args. |
-| `my-grab-ticket` | New (Jul 27). Grabs a ticket from the profile's **Work queue** (tracker CLI, grabbable states, claim verb), moves it to In Progress, hands it to `/my-grill` as the topic. Stops if the profile has no Work queue. |
+| `my-grab-ticket` | New (Jul 27). Grabs a ticket from the profile's **Work queue** (tracker CLI, grabbable states, claim verb), moves it to In Progress, hands it to `/my-grill` as the topic. Stops if the profile has no Work queue. Selection runs in the shared `my-ticket-picker` agent (`agents/`), pinned to low-effort Opus so picking never spends premium-model credits. |
 
 `skills/_shared/` holds doctrine referenced by more than one skill - currently
 `EVIDENCE.md`, the proof doctrine used by `my-build-full`'s pipeline and by
@@ -84,6 +91,8 @@ with the real skills.
 **Build pipeline**, **Proof surface**, and **PR & publish** sections and STOPS if
 any is missing - an autonomous pipeline must never guess its gates. Worker agent
 types (e.g. PixelGenerator's `build-worker`) stay defined in each repo's
-`.claude/agents/`; the profile only names them.
+`.claude/agents/`; the profile only names them. Repo-agnostic agents that a
+shared skill spawns itself (currently `my-ticket-picker`) live here in
+`agents/` instead, since they carry no repo-specific doctrine.
 
 Repo-local `grill` / `handoff` / `build-full` were left in place untouched.
