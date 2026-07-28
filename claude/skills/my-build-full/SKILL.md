@@ -226,6 +226,15 @@ them as Step 2's `reviews` args. The retro audits this decision against what
 actually shipped - that feedback loop, not upfront caution, is how the selection
 criteria stay honest.
 
+**Ticket linkage.** If this conversation claimed a work-queue ticket (the usual
+path: `/my-grab-ticket` -> grill -> this skill), the run closes it when the PR
+opens. From the profile's **Work queue** section resolve two commands for that
+ticket ID, verbatim per the CLI it names: the close command (the verb that moves
+it to Done) and the note command (how to post a comment). Pass them as Step 2's
+`ticket` args. No claimed ticket in the conversation, or no Work queue section in
+the profile -> omit `ticket` entirely; never guess an ID. The ticket does NOT go
+into the plan doc - only the PR stage acts on it.
+
 Sections, in order:
 
 - **Objective** - 1-2 sentences max: what we're building and why. No personas, no
@@ -326,9 +335,15 @@ args: {
   },
   doctrine: "<profile: doctrine files, comma-separated repo paths, or empty>",
   reviews: { adversarial: <true|false>, design: <true|false> },
+  ticket: { id: "<work-queue ticket ID>",
+            close: "<the profile's Work queue close command with the ID substituted, verbatim>",
+            note: "<the profile's Work queue note/comment command for this ID; the PR stage supplies the text>" },
   agents: { impl: "<agent type or null>", light: "<agent type or null>" }
 }
 ```
+
+Omit `ticket` entirely when the conversation claimed no work-queue ticket (see
+Step 1's ticket linkage).
 
 `reviews` carries Step 1's review decision verbatim - both false (or the key
 omitted) means no Review phase, which is the correct call for mechanical work,
@@ -374,6 +389,7 @@ const G = A.gates || {}
 const DOCTRINE = A.doctrine || ''
 const AGENTS = A.agents || {}
 const REV = A.reviews || {}   // Step 1's review decision; both false = no Review phase, deliberately.
+const TICKET = A.ticket || null   // work-queue ticket this run ships (Step 1's ticket linkage); null = none claimed.
 const MODEL = A.model || 'opus'   // build stages pin to Opus by default; override only via an explicit args.model.
 // Decomposed build (Step 2b): pieces = { parallel: [...], sequential: [...] }; absent/empty = single-pass.
 let PAR = (A.pieces && Array.isArray(A.pieces.parallel)) ? A.pieces.parallel : []
@@ -783,7 +799,12 @@ ${G.fmt ? `- Fmt before the commit: ${G.fmt}. If it reflows a file outside the l
 - **Publish the evidence** once the PR number exists, exactly per the profile's publish command and fallback. On
   success, \`gh pr edit\` the review URL into the Validation section. If publishing fails, keep the PR, reference the
   bundle's local path instead, and report the publish error - never block the PR on it.
-- **CI tail** (per PR-FORMAT.md): after the PR is open and the evidence link is in, run \`gh pr checks <number>\`. No
+${TICKET ? `- **Work-queue ticket.** This run ships ticket ${TICKET.id}. After the PR is open and the evidence link is in,
+  post the PR URL on the ticket (one line: the URL plus "PR opened by my-build-full"): ${TICKET.note}${draftReason ? `. The PR
+  is a DRAFT, so do NOT close the ticket - it stays In Progress until the must-fix findings are resolved; the post-PR
+  triage closes it` : `. Then close the ticket: ${TICKET.close}`}. If the PR was not opened (gh not authed), leave the ticket
+  untouched. Either way, state the ticket's end state in your return value.
+` : ''}- **CI tail** (per PR-FORMAT.md): after the PR is open and the evidence link is in, run \`gh pr checks <number>\`. No
   checks reported -> the repo has no PR CI; move on. Otherwise wait for the checks to conclude (cap the wait at ~15
   minutes); on a failure make AT MOST ONE fix attempt (read the failing log, fix, commit, push, re-check once), then
   stop either way. Fold the final CI state into your return value ("CI green" / "CI red: <reason>" / "CI still
@@ -929,7 +950,9 @@ When the Workflow completes, report compactly based on its return value:
 - `status: pass` -> the PR URL and its CI-tail state (or branch name if `gh`
   wasn't authed), and whether it opened as a **DRAFT** (`draft: true`) - if so,
   lead with `draftReason`: unresolved must-fix findings are the first thing the
-  human must look at. Then run the **post-PR triage** below.
+  human must look at. Relay the work-queue ticket's end state when the run
+  carried one (closed, or left In Progress - the PR stage's return names it).
+  Then run the **post-PR triage** below.
 - `status: blocked` -> no PR; the implementer hit a blocker it wouldn't guess
   past. Quote `blocker` so the user can resolve the ambiguity or fix the plan. A
   decomposed run's summary names the failing piece (and, for a parallel wave, the
@@ -974,3 +997,8 @@ diff into the main context.
 5. **Merging stays the human's call.** Never merge, close, or mark the draft
    ready yourself - a draft PR converts only after its must-fix findings are
    resolved on the branch.
+6. **Ticket close-out.** A draft PR (or an unauthed-gh run) leaves the run's
+   work-queue ticket In Progress. When the human marks the PR ready after fixes
+   (or the PR finally opens), close the ticket with the profile's Work queue
+   close verb - one command, run it directly. A ready PR's ticket was already
+   closed by the PR stage; nothing to do.

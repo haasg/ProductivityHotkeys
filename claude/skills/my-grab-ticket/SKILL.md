@@ -98,6 +98,7 @@ Then, using the queue CLI the profile names:
    starts with a real topic, never an unfilled placeholder.
 
 Marking the ticket done is NOT part of this skill - that happens when the
-resulting work actually ships.
+resulting work actually ships: `/my-build-full`'s ticket linkage closes it when
+the PR opens (grab-ticket -> grill -> build-full is the intended arc).
 
 </what-to-do>

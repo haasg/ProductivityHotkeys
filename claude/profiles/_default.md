@@ -110,6 +110,10 @@ fills in:
 - **Grabbable states:** which state(s) count as "up for grabs" (e.g. `Todo`,
   not `Backlog`)
 - **Claim verb:** the command that moves a ticket to In Progress
+- **Note verb:** the command that posts a comment on a ticket (session stamps,
+  PR links)
+- **Close verb:** the command that moves a ticket to Done - `/my-build-full`
+  runs it when the PR ships
 
 ## Domain lessons
 

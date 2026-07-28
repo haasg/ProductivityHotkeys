@@ -220,6 +220,8 @@ config; the grill does not build the tooling.
   posted at claim time are NOT readable back through this CLI. Do not conclude a
   ticket is unblocked because no link says otherwise; read the description.
 - **Claim verb:** `scripts/linear.ps1 start <ID>` moves it to In Progress.
+- **Close verb:** `scripts/linear.ps1 done <ID>` moves it to Done -
+  `/my-build-full`'s PR stage runs it when the PR opens ready-for-review.
 - **Note verb:** `scripts/linear.ps1 comment <ID> "<text>"` - carries the
   session stamp written at claim time. The text is Linear markdown. Pass it as a
   single-quoted PowerShell here-string (`@'` ... `'@`, closing delimiter at
