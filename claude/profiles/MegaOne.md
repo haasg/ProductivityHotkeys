@@ -91,6 +91,13 @@ Not present. Skip every batch-conditional rule:
 - **Open a PR on completion:** no. See **Git policy** - never on any branch.
 - **Branch handling:** work on whatever branch is already checked out. Do not
   create, switch, or rebase branches as part of a handoff.
+- **Publish an evidence report on completion:** yes. After validation passes,
+  prove the change live per **Proof surface**, assemble the bundle at
+  `report-out/` per **PR & publish**, and publish with
+  `bash tools/publish_report.sh 0` (the ad-hoc, no-PR form). Publishing uploads
+  gitignored files only; the **Git policy** still applies in full - no commits,
+  no staging. A runtime-observable change with no attached Studio reports the
+  missing Studio instead of skipping the evidence silently.
 
 ## Build pipeline
 

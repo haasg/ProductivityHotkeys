@@ -59,6 +59,10 @@ Not present. Skip every batch-conditional rule:
   falling back to `main`
 - **Post-validation command:** none
 - **Open a PR on completion:** only when the session is on a non-default branch
+- **Publish an evidence report on completion:** no. A profile turning this on
+  must also fill in **Proof surface** plus the bundle location and the publish
+  command's no-PR form in **PR & publish** - the report is driven entirely by
+  those sections.
 
 ## Build pipeline
 
@@ -92,6 +96,18 @@ None configured (`/my-build-full` stops without it). A real profile fills in: th
 architecture-section format and unit vocabulary, the Try-it command, the evidence
 bundle location (and how to discover it from a worktree), the publish command with
 its credential source and fallback, and the merge-sync re-check commands.
+
+## Work queue
+
+None configured - `/my-grab-ticket` does NOT run on defaults. A queue skill that
+guesses which tracker a repo uses is worse than none, so a missing or "none
+configured" Work queue section means the skill stops and asks. A real profile
+fills in:
+
+- **CLI:** the queue command, verbatim, and how it authenticates
+- **Grabbable states:** which state(s) count as "up for grabs" (e.g. `Todo`,
+  not `Backlog`)
+- **Claim verb:** the command that moves a ticket to In Progress
 
 ## Domain lessons
 

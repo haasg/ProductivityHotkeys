@@ -30,7 +30,7 @@ This skill is shared across repos; the repo-specific parts come from a profile.
 
 From the profile this skill uses **Module vocabulary** (the unit word), **Docs**
 (what to reference), and **Handoff** (default branch, post-validation command,
-whether to open a PR).
+whether to open a PR, whether to publish an evidence report on completion).
 
 ## Step 1 - Write the handoff document
 
@@ -53,7 +53,11 @@ Include, in order:
 - **Remaining steps** - an ordered, actionable checklist, each step concrete
   enough to execute without re-deriving it.
 - **Validation / done when** - how the agent confirms the work is correct and
-  complete: the concrete checks, tests, or scenario to run.
+  complete: the concrete checks, tests, or scenario to run. When the profile's
+  **Handoff** section says **Publish an evidence report on completion: yes**,
+  write this section concretely enough to drive the profile's **Proof surface**:
+  the live scenario, the expected observable results, and what to screenshot or
+  record - the continuation agent turns it into the published evidence.
 - **References** - paths and URLs to the relevant code, ADRs, glossary terms,
   specs, or issues, using the locations named in the profile's **Docs** section.
   Reference them; do **not** duplicate their content.
@@ -92,6 +96,27 @@ session is on any other branch (the usual case in a worktree) and the profile's
 Drop the command clause entirely when the profile names no post-validation
 command. On the default branch, append nothing: no PR, and the usual rule applies
 (don't commit unless the user asked).
+
+**Evidence report - profile-flagged, branch-independent.** If the profile's
+**Handoff** section says **Publish an evidence report on completion: yes**,
+additionally append to the prompt (on any branch, and independent of the PR
+clause above):
+
+> When validation passes, prove the change live: execute the handoff document's
+> **Validation / done when** section per the shared proof doctrine at
+> `$env:USERPROFILE\.claude\skills\_shared\EVIDENCE.md` and the profile's
+> **Proof surface** section at `<abs path to the profile>` - read both in full
+> first; they are binding. Capture named screenshots for anything visible and a
+> recording for anything that moves. Assemble the evidence bundle at the
+> profile's bundle location and publish it with the profile's publish command in
+> its no-PR / ad-hoc form (both in the profile's **PR & publish** section), then
+> report the review URL. Publishing uploads gitignored files only - it never
+> commits, stages, or touches anything git-tracked, and the profile's git policy
+> applies in full. If the proof surface's readiness check fails, stop and report
+> what is missing instead of improvising a different proof.
+
+This clause composes with, never replaces, the profile's commit/PR rules: a repo
+can publish evidence while remaining strictly no-commit.
 
 Do **not** paste the conversation, the doc's contents, or your own summary into
 the prompt - the whole point is a clean context seeded only by the doc. When the

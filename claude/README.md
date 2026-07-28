@@ -7,6 +7,7 @@ history and survive a machine.
 ```
 claude/
   skills/          one directory per shared skill, junctioned into ~/.claude/skills
+    _shared/       cross-skill doctrine (EVIDENCE.md), junctioned like a skill but not one
     my-grill/
     my-handoff/
   profiles/        one file per repo, junctioned to ~/.claude/skill-profiles
@@ -70,6 +71,14 @@ consolidated stay where they are and keep working.
 | `my-handoff` | Consolidated from `PixelGenerator/.claude/skills/handoff` (Jul 6, the richest of four forks) |
 | `my-grill` | Consolidated from `PixelGenerator/.claude/skills/grill` (Jul 22, the newest of seven forks) |
 | `my-build-full` | Consolidated from `PixelGenerator/.claude/skills/build-full` (Jul 22) + the MegaOne fork (Jul 20). One static Workflow script; gates/proof/publish flow in from the profile as args. |
+| `my-grab-ticket` | New (Jul 27). Grabs a ticket from the profile's **Work queue** (tracker CLI, grabbable states, claim verb), moves it to In Progress, hands it to `/my-grill` as the topic. Stops if the profile has no Work queue. |
+
+`skills/_shared/` holds doctrine referenced by more than one skill - currently
+`EVIDENCE.md`, the proof doctrine used by `my-build-full`'s pipeline and by
+`my-handoff` when a profile sets **Publish an evidence report on completion:
+yes** (e.g. MegaOne, where handoffs publish evidence but never commit). It has
+no SKILL.md and is not invocable; the setup snippet above junctions it along
+with the real skills.
 
 `my-build-full` is stricter than the others about profiles: it requires the
 **Build pipeline**, **Proof surface**, and **PR & publish** sections and STOPS if
