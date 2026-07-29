@@ -1,6 +1,6 @@
 ---
 name: my-build-full
-description: Distill the current conversation's aligned plan into a lean executable doc, then run an autonomous Workflow - implement-and-self-prove -> plan-selected read-only reviewers (adversarial code / game-design) with confirmed defects fixed in-run -> a read-only retrospective that checks the build ran as the plan expected -> open a PR carrying the judgment findings as numbered Review notes - using fresh-context subagents. Ends with a post-PR triage step: the human picks which notes to address and a fresh subagent applies them on the same branch/PR. Repo-specific gates, proof surface, and publish mechanics come from the repo's skill profile. Stops and asks if a change is blocked or can't be proven without tooling that doesn't exist yet. Use after a grilling/planning session when you want to go from alignment to a reviewable PR without babysitting.
+description: Distill the current conversation's aligned plan into a lean executable doc, then run an autonomous Workflow - implement-and-self-prove -> plan-selected read-only reviewers (adversarial code / game-design), each returning a fix lane that lands in-run and escalated notes for the human -> a read-only retrospective that checks the build ran as the plan expected -> open a PR carrying per-review findings (numbered A1../D1../R1..) and a token & time audit - using fresh-context subagents. Ends with a post-PR triage step: the human picks which findings to address and a fresh subagent applies them on the same branch/PR. Repo-specific gates, proof surface, and publish mechanics come from the repo's skill profile. Stops and asks if a change is blocked or can't be proven without tooling that doesn't exist yet. Use after a grilling/planning session when you want to go from alignment to a reviewable PR without babysitting.
 argument-hint: "<optional extra notes to pass through to the implementer>"
 disable-model-invocation: true
 ---
@@ -19,16 +19,19 @@ implement + self-prove --> review --> fix --> retro --> open PR --> post-PR tria
         |                    |         |        +- did the build run as the plan expected? surface plan
         |                    |         |           holes, proof gaps, process issues, token/time waste -
         |                    |         |           and was the review decision itself right?
-        |                    |         |           -> Process notes in the PR (advisory, read-only, never blocks)
+        |                    |         |           -> a Retro findings section (R1..) + the token & time
+        |                    |         |              audit table in the PR (advisory, never blocks)
         |                    |         |
-        |                    |         +- only when the adversarial review CONFIRMED defects: fix them,
-        |                    |            re-gate, re-prove -> the fixes make it INTO the PR;
-        |                    |            unfixable -> the PR opens as a DRAFT
+        |                    |         +- whenever EITHER reviewer returned fix items: verify each, land
+        |                    |            exactly those, re-gate, re-prove -> the fixes ship INSIDE the
+        |                    |            PR; an unlanded defect/violation -> the PR opens as a DRAFT
         |                    |
         |                    +- 0-2 read-only reviewers, picked at plan time per task shape (Step 1's
-        |                       review decision): adversarial code review (confirmed defects -> fix
-        |                       stage; judgment concerns -> Review notes) and/or game-design review of
-        |                       the proof evidence (advisory Review notes); mechanical changes get neither
+        |                       review decision): adversarial code review (defect hunt) and/or
+        |                       game-design review of the proof evidence (design-intent judgment).
+        |                       Each returns TWO lanes - `fix` (exact changes, landed in-run) and
+        |                       `notes` (escalated findings for the human, A1../D1.. in the PR);
+        |                       mechanical changes get neither reviewer
         |
         +- one agent by default; a decomposed plan (Step 2b) runs it as <=5 piece agents:
            parallel wave (isolated worktrees) > merge > sequential pieces > integrate-and-prove
@@ -50,10 +53,19 @@ one real defect) - that data point is the guardrail this design answers. Step 1
 decides per task which reviewers, if any, earn their seat. Reviewers read
 artifacts (the plan, the diff, the proof evidence) instead of re-driving the game,
 must tie every claimed defect to a concrete failure scenario, and are told an
-empty review of a sound change is a good and honest result. Confirmed defects are
-fixed in-run so they ship fixed inside the PR; judgment-grade findings ride to the
-PR as numbered **Review notes** for the human to triage after the PR opens -
-addressed on the same branch/PR, never a follow-up PR.
+empty review of a sound change is a good and honest result.
+
+**Both reviewers sort what they find into two lanes: `fix` and `notes` - and they
+fix by default.** A finding lands in-run, inside the PR, unless it genuinely needs
+a human: it picks among real alternatives, moves the plan's constraints or a public
+surface, is too big or risky for one fix pass, or the reviewer isn't confident it's
+even an improvement. The fix lane demands **exactness** - the reviewer states the
+precise change, because the fix stage executes instructions and never interprets
+directions. Everything escalated rides to the PR as that lane's numbered findings
+(`A1..` adversarial, `D1..` design, `R1..` retro) for the human to triage after the
+PR opens - addressed on the same branch/PR, never a follow-up PR. Escalation is
+held to an **impact bar**: surface a finding only when its impact justifies a
+human's review time; few or none is a good honest result.
 
 The **Retro** phase reads the run rather than writing the feature - on a run with
 no reviewers it is the only second pair of eyes before the human. A fresh
@@ -65,22 +77,23 @@ diff, the validation actually exercised the paths the diff moved, and the plan
 itself held up. It also audits the run's **efficiency** from the stage
 transcripts on disk, and - the meta-review lane - judges whether Step 1's
 **review decision** was right for what actually shipped. Each finding carries a
-**concrete recommendation**. The findings land in the PR as **Process notes** and
-in the run report, as leads for you to investigate separately. It is **advisory
-and read-only** - it never blocks the PR and never changes code.
+**concrete recommendation**. The findings land in the PR as its own **Retro**
+section (`R1..`), with the per-stage **token & time audit** table beside it, as
+leads for you to investigate separately. It is **advisory and read-only** - it
+never blocks the PR and never changes code.
 
-You fire one command and walk away; you come back to a PR - with Review notes to
-triage and Process notes attached - or to a clear report (blocked, or it can't be
-proven without new tooling you should decide on). The PR is not the finish line:
-the norm is the **post-PR triage step** (see After the pipeline) where the human
-picks which judgment findings to address, a fresh subagent applies them on the
-same branch/PR, and only then it merges - slam-merging a clean run is the
-exception, not the habit. Every stage is a **fresh-context subagent seeded only
-by the plan doc + the working-tree diff + the implementer's proof** - never the
-grilling transcript, and never a resumed agent. The implementer's work persists
-on the working tree, so each later stage just reads the diff off disk - and the
-post-PR follow-up stays on subagents too, so the firing session's context never
-absorbs the diff or the findings artifacts.
+You fire one command and walk away; you come back to a PR - with per-review
+findings to triage and the token & time audit attached - or to a clear report
+(blocked, or it can't be proven without new tooling you should decide on). The PR
+is not the finish line: the norm is the **post-PR triage step** (see After the
+pipeline) where the human picks which escalated findings to address, a fresh
+subagent applies them on the same branch/PR, and only then it merges -
+slam-merging a clean run is the exception, not the habit. Every stage is a
+**fresh-context subagent seeded only by the plan doc + the working-tree diff + the
+implementer's proof** - never the grilling transcript, and never a resumed agent.
+The implementer's work persists on the working tree, so each later stage just
+reads the diff off disk - and the post-PR follow-up stays on subagents too, so the
+firing session's context never absorbs the diff or the findings artifacts.
 
 ## Step 0 - Load the repo profile (gate)
 
@@ -149,9 +162,11 @@ require a grill to have run; it distills whatever alignment exists in the curren
 conversation. If the conversation has little concrete alignment (especially no
 validation strategy - see Step 1), say so plainly but still proceed if asked.
 
-The pipeline ships the implementer's diff hardened only by the fix stage's
-confirmed-defect fixes - it does **not** simplify or refactor the change. To
-clean up the diff, run `/simplify` or `/code-review` by hand on the branch after
+The pipeline ships the implementer's diff hardened by exactly the fix items the
+reviewers listed - it does **not** sweep the change for simplification. Reviewers
+are not style hunters: they land a clearly-agreeable naming or simplification item
+noticed *in passing*, but they hunt defects and judge design intent. To sweep the
+diff deliberately, run `/simplify` or `/code-review` by hand on the branch after
 the PR opens.
 
 ## Step 1 - Write the plan doc
@@ -208,16 +223,18 @@ this closed menu - never invent other reviewer types:
   plausible-looking diff can be wrong in ways a green gate won't catch:
   determinism, algorithms, concurrency/multi-process work, state machines,
   boundary math, protocol/netcode. It hunts defects in the diff and must back
-  every confirmed one with a concrete failure scenario; confirmed defects are
-  fixed in-run before the PR, judgment-grade concerns become Review notes. Skip
-  it for straightforward wiring and content work.
+  every confirmed one with a concrete failure scenario. Skip it for
+  straightforward wiring and content work.
 - **Game-design review** - enlist when the change moves player-facing behavior,
   feel, or visuals. It judges the proof evidence against the plan's **Design
   intent** as gameplay rather than code - and therefore requires that section to
-  be written. Advisory only: everything it produces is a Review note. Skip it
-  when nothing a player experiences changes.
+  be written. Skip it when nothing a player experiences changes.
 - **Neither** - the default for mechanical/content-only changes (asset swaps,
   renames, config, doc moves): the retro alone is the second read.
+
+Both reviewers carry the same two lanes: an exactly-stated `fix` item lands in-run
+before the PR, and only a finding that genuinely needs a human's call escalates to
+that lane's PR findings (see the fix-by-default rule above).
 
 The profile's **Build pipeline** section may carry a review note (e.g. "most
 changes here are player-facing - lean design-reviewer-in"); honor it. Write the
@@ -368,7 +385,7 @@ delivery failure stops loud instead of self-healing into the wrong change.
 ```javascript
 export const meta = {
   name: 'my-build-full',
-  description: 'Implement and self-prove an aligned plan doc, review it per the plan\'s review decision (fixing confirmed defects in-run), retro the run, open a PR',
+  description: 'Implement and self-prove an aligned plan doc, review it per the plan\'s review decision (landing each reviewer\'s fix lane in-run), retro the run, open a PR',
   phases: [
     { title: 'Implement' },
     { title: 'Review' },
@@ -418,49 +435,126 @@ const IMPL_SCHEMA = {
   },
 }
 
+// Both reviewers return the same two lanes: `fix` (exact changes the fix stage lands in-run) and `notes` (escalated
+// findings the human triages on the PR). NOTES_SCHEMA is that escalation lane; the retro's findings use it too.
+const NOTES_SCHEMA = (what) => ({
+  type: 'array',
+  description: `${what} - ordered highest impact first, no cap. Surface a finding ONLY when its impact justifies a human's review time; few or none is a good honest result. Never surface a low-impact item just to have something to show.`,
+  items: {
+    type: 'object',
+    required: ['issue', 'recommendation'],
+    additionalProperties: false,
+    properties: {
+      issue: { type: 'string', description: 'the finding, concisely, with its concrete pointer (file:line, evidence item, plan bullet)' },
+      recommendation: { type: 'string', description: 'the recommended solution - specific and actionable, not a restated problem' },
+    },
+  },
+})
+
 const ADV_SCHEMA = {
   type: 'object',
-  required: ['summary', 'findingsPath', 'mustFix', 'notes'],
+  required: ['summary', 'findingsPath', 'fix', 'notes'],
   additionalProperties: false,
   properties: {
     summary: { type: 'string', description: '1-2 sentences: the headline, or that the diff looks sound' },
     findingsPath: { type: 'string', description: 'path to the full findings markdown in temp' },
-    mustFix: {
+    fix: {
       type: 'array',
-      description: 'CONFIRMED defects only - each with a failure scenario the fix stage will re-check; judgment-grade concerns belong in notes',
+      description: 'items the fix stage lands in-run - fix by default, escalate to notes by exception. Each states the EXACT change to make; a defect also carries the failure scenario the fix stage re-checks.',
       items: {
         type: 'object',
-        required: ['title', 'repro'],
+        required: ['title', 'kind', 'change'],
         additionalProperties: false,
         properties: {
-          title: { type: 'string', description: 'one line naming the defect' },
-          repro: { type: 'string', description: 'the concrete failure scenario: specific inputs/state -> the wrong observable outcome, traced through the diff' },
+          title: { type: 'string', description: 'one line naming the item; the fix stage reports back by this exact title' },
+          kind: { enum: ['defect', 'improvement'] },
+          change: { type: 'string', description: 'the precise change to make, executable without interpretation (e.g. "clamp N to the band height at panel.rs:88")' },
           pointer: { type: 'string', description: 'file:line or diff hunk' },
+          repro: { type: 'string', description: 'defects only: the concrete failure scenario - specific inputs/state -> the wrong observable outcome, traced through the diff' },
         },
       },
     },
-    notes: { type: 'array', items: { type: 'string' }, description: 'judgment-grade findings for the PR Review notes, one line each: the concern + a pointer' },
+    notes: NOTES_SCHEMA('escalated code findings for the PR\'s Adversarial section (A1..)'),
   },
 }
 
 const DESIGN_SCHEMA = {
   type: 'object',
-  required: ['summary', 'findingsPath', 'notes'],
+  required: ['summary', 'findingsPath', 'fix', 'notes'],
   additionalProperties: false,
   properties: {
     summary: { type: 'string', description: '1-2 sentences: the headline, or that the evidence matches the design intent' },
     findingsPath: { type: 'string', description: 'path to the full findings markdown in temp' },
-    notes: { type: 'array', items: { type: 'string' }, description: 'gameplay-judgment findings for the PR Review notes, one line each: what looks off + which evidence item (or missing capture) shows it' },
+    fix: {
+      type: 'array',
+      description: 'items the fix stage lands in-run - fix by default, escalate to notes by exception. Each states the EXACT change to make; a violation also carries the evidence item that shows it.',
+      items: {
+        type: 'object',
+        required: ['title', 'kind', 'change'],
+        additionalProperties: false,
+        properties: {
+          title: { type: 'string', description: 'one line naming the item; the fix stage reports back by this exact title' },
+          kind: { enum: ['violation', 'improvement'] },
+          change: { type: 'string', description: 'the precise change to make, executable without interpretation (e.g. "raise the label to 12px at hud.rs:44")' },
+          pointer: { type: 'string', description: 'file:line, or the evidence item that shows it' },
+          evidence: { type: 'string', description: 'violations only: the concrete evidence pointer - which screenshot/clip/frame shows the design intent being violated' },
+        },
+      },
+    },
+    notes: NOTES_SCHEMA('escalated design findings for the PR\'s Design section (D1..)'),
+  },
+}
+
+// The fix stage's own shape: which listed items landed, which were dismissed as not real, which were demoted to PR
+// findings. Only an unlanded item of kind defect/violation drafts the PR (see the draft logic below).
+const FIX_SCHEMA = {
+  type: 'object',
+  required: ['outcome', 'summary', 'landed', 'dismissed', 'demoted'],
+  additionalProperties: false,
+  properties: {
+    outcome: { enum: ['proven', 'blocked'] },
+    summary: { type: 'string', description: 'one paragraph: what landed, what did not, and how the gates were met' },
+    landed: { type: 'array', items: { type: 'string' }, description: 'titles (verbatim, as listed to you) of the items that were applied AND re-checked' },
+    dismissed: {
+      type: 'array',
+      description: 'items verified NOT to be real - the repro did not fail, or the described state does not match the code. Nothing was changed for these.',
+      items: {
+        type: 'object',
+        required: ['title', 'reason'],
+        additionalProperties: false,
+        properties: {
+          title: { type: 'string', description: 'the item title, verbatim' },
+          reason: { type: 'string', description: 'one line: what you checked and what it actually does' },
+        },
+      },
+    },
+    demoted: {
+      type: 'array',
+      description: 'real items NOT landed - each demoted to a PR finding rather than churned (it ballooned beyond its description, cascades, needs rework, or touches design intent)',
+      items: {
+        type: 'object',
+        required: ['title', 'reason'],
+        additionalProperties: false,
+        properties: {
+          title: { type: 'string', description: 'the item title, verbatim' },
+          reason: { type: 'string', description: 'one line: why it was not landed' },
+        },
+      },
+    },
+    blocker: { type: 'string', description: 'blocked only: why the stage could not finish (gates left red, tree left mid-fix)' },
   },
 }
 
 const RETRO_SCHEMA = {
   type: 'object',
-  required: ['summary', 'reviewPath'],
+  required: ['summary', 'reviewPath', 'findings', 'auditTable'],
   additionalProperties: false,
   properties: {
     summary: { type: 'string', description: '2-3 sentences for the run report: the headline of what was surfaced, or that nothing notable came up' },
-    reviewPath: { type: 'string', description: 'path to the findings markdown in temp, for the PR to inline' },
+    reviewPath: { type: 'string', description: 'path to the full findings markdown in temp (the fuller reasoning; the PR renders the structured fields below, not this file)' },
+    findings: NOTES_SCHEMA('run findings for the PR\'s Retro section (R1..)'),
+    auditTable: { type: 'string', description: 'the token & time audit as a markdown table (stage | wall-clock | output tokens | tool calls | longest wait) - ALWAYS, even when nothing is anomalous; it is the run-over-run trend data' },
+    auditNote: { type: 'string', description: 'optional, and ONLY when something anomalous happened (a >10min tool wait, a stage wildly out of proportion) or the run directory could not be located - concise even then' },
     topFinding: { type: 'string', description: 'the single most worth-investigating item, if any - paired with its recommended action' },
   },
 }
@@ -619,6 +713,27 @@ Return exactly one outcome:
 - "blocked": you cannot reach green, or the accumulated diff needs real rework. Set blocker. Do NOT guess or fake success.
 ${NOTES ? `\nExtra notes: ${NOTES}` : ''}`
 
+// The fix-vs-notes sorting rule, identical for both reviewers: fix by default, escalate only by exception, and an
+// escalated finding must clear the impact bar (the human's review time is the pipeline's scarcest resource).
+const LANES = `Sort what survives into exactly two lanes - and **fix by default**. For each finding, ask: would a
+reasonable human plausibly want this done differently, or not done at all? If not, it goes in \`fix\` and lands in-run.
+
+- **fix** - the fix stage applies exactly these before the PR opens. **Exactness is the entry fee**: state the precise
+  change ("clamp N to the band height at \`panel.rs:88\`"), never a direction ("make the clamping more robust") - the
+  fix stage EXECUTES instructions and never interprets them. Worth doing but not pin-downable that precisely -> that
+  fact alone escalates it. What belongs here once it clears the bar: confirmed defects/violations, preventive
+  hardening (not broken today, breaks under an obvious near-term change, cheap guard), and a style, naming, or
+  simplification item you noticed IN PASSING that is clearly agreeable.
+- **notes** - escalated to the human, numbered on the PR for triage. Escalate ONLY when one of these holds: (a) it
+  requires choosing among genuinely different alternatives, or it moves the plan's constraints, the design intent, or
+  a public surface; (b) it is too big or too risky to land safely in one fix pass; or (c) you are not confident it is
+  actually an improvement (a suspicion, a taste call). Each note is an issue + a recommended solution, ordered
+  highest impact first, with no cap on the count.
+
+**Impact bar for notes:** surface a finding only when its impact justifies a human's review time - a low-impact
+suggestion spawns a sub-task nobody ever gets to, which is worse than silence. Few or none is a good, honest result;
+never surface something just to have something to show.`
+
 const advPrompt = (implProofPath) => `You are an ADVERSARIAL CODE REVIEW of the uncommitted change on this working tree - a defect hunt, not a style
 review. You are READ-ONLY: do not modify the tree, do not run live validation, do not write anything into the repo.
 
@@ -633,19 +748,19 @@ decisions**; regressions in adjacent behavior the diff touches; state that can g
 diff moved; error paths that swallow failures. Trace each suspicion through the actual code until it is confirmed or
 dies - never report a hunch as a defect.
 
-Sort what survives into exactly two buckets:
-- **mustFix** - CONFIRMED defects only. Each needs a concrete failure scenario (specific inputs/state -> the wrong
-  observable outcome) traced through the diff, plus a file:line pointer. The fix stage will reproduce your scenario,
-  fix it, and re-check it - a vague or wrong repro burns a whole stage, so if you cannot state the scenario
-  concretely, it is not a mustFix.
-- **notes** - judgment calls: a risky pattern, an edge you suspect but could not confirm, a construction likely to
-  break under a change the plan implies is coming. One line each: the concern + a pointer. These go to the human in
-  the PR's Review notes; do not inflate a note into a mustFix to make it "count".
+${LANES}
+Lane specifics for this review: a \`fix\` item of kind **defect** also needs its concrete failure scenario as
+\`repro\` (specific inputs/state -> the wrong observable outcome, traced through the diff) - the fix stage
+reproduces it, fixes it, and re-checks it, so a vague or wrong repro burns a whole stage. Everything else you land is
+kind **improvement** and needs no repro, just the exact \`change\`. A suspicion you could not confirm is never a
+defect: it is a note, or it is nothing.
 
-Write the full findings (what / why it matters / pointer, plus the repro for each mustFix) to a markdown artifact in
+Write the full findings (what / why it matters / pointer, plus the repro for each defect) to a markdown artifact in
 the OS temp dir (NOT the repo); return its path as findingsPath. This review costs tokens too: do NOT pad, do NOT
-restate the diff, do NOT invent findings to look thorough - empty mustFix and empty notes on a sound diff is a good
-and honest result. Style, naming, and simplification are OUT of scope (the human runs /simplify separately).`
+restate the diff, do NOT invent findings to look thorough - empty fix and empty notes on a sound diff is a good and
+honest result. You are not a style hunter: your mission is defect hunting, and \`/simplify\` is the deliberate
+style/simplification sweep the human runs separately - which is exactly why only an in-passing, clearly-agreeable
+cleanup rides along in your fix lane.`
 
 const designPrompt = (implProofPath) => `You are a GAME-DESIGN REVIEW of the change proven on this working tree - you judge the shipped behavior as GAMEPLAY,
 not as code. You are READ-ONLY: do not modify the tree, do not drive the game, do not write anything into the repo.
@@ -660,42 +775,67 @@ Judge what the evidence shows against the Design intent, as a designer would: do
 (scale, contrast, visual hierarchy)? does the behavior make sense for the player (pacing, feedback, fairness,
 affordance)? does anything contradict the game's documented design language? does an edge case produce something
 technically correct but wrong as gameplay? Evidence too thin to judge is itself a finding - "no capture shows X, so
-the intent cannot be checked" doubles as a proof gap; say it plainly.
+the intent cannot be checked" doubles as a proof gap; say it plainly. **Clip duration is part of that check**:
+EVIDENCE.md requires a clip to cover the full scenario (steady lead-in, the behavior, the settled end state) at
+real-time speed with a 5-second minimum - a clip under that floor, or one too short for you to judge the motion it
+exists to show, is a finding in its own right; say which clip and how long it actually is.
 
-Everything you produce is ADVISORY judgment for the human. Return one line per finding in notes (what looks off +
-which evidence item or missing capture shows it), with the fuller reasoning in a markdown artifact in the OS temp dir
-(NOT the repo); return its path as findingsPath. Do NOT pad or invent findings to look thorough - an empty review of
-a change whose evidence matches its intent is a good and honest result.`
+${LANES}
+Lane specifics for this review: a \`fix\` item of kind **violation** also needs \`evidence\` - the concrete pointer
+(which screenshot, clip, or frame) that shows the Design intent being violated. Everything else you land is kind
+**improvement** and needs only the exact \`change\`. You judge behavior, but a fix item is still a code instruction:
+if you cannot name the precise change to make, it escalates to notes. A missing or unjudgeable capture is always a
+note (nobody can fix it from your seat) - the fix stage cannot re-drive the game.
 
-const fixPrompt = (adv, implProofPath) => `You are the FIX stage: the adversarial review CONFIRMED defect(s) in the uncommitted change on this working tree,
-each with a failure scenario. Fix exactly these - nothing else.
+Write the fuller reasoning to a markdown artifact in the OS temp dir (NOT the repo); return its path as findingsPath.
+Do NOT pad or invent findings to look thorough - an empty review of a change whose evidence matches its intent is a
+good and honest result.`
+
+const fixPrompt = (items, artifacts, implProofPath) => `You are the FIX stage: the review lane(s) that ran handed you ${items.length} item(s) to land in the uncommitted
+change on this working tree. Apply exactly these - nothing else, nothing self-initiated.
 ${READS}
-The plan is at ${PLAN}; the review's full findings are at ${adv.findingsPath}; the implementer's self-proof is at
-${implProofPath} (both in temp). The confirmed defects:
-${adv.mustFix.map((f, i) => `${i + 1}. ${f.title}${f.pointer ? ` [${f.pointer}]` : ''}\n   repro: ${f.repro}`).join('\n')}
+The plan is at ${PLAN}; the implementer's self-proof is at ${implProofPath}; the reviewers' full findings are at:
+${artifacts}
+The items to land, each with the exact change its reviewer specified:
+${items.map((f, i) => `${i + 1}. [${f.lane}/${f.kind}] ${f.title}${f.pointer ? ` [${f.pointer}]` : ''}\n   change: ${f.change}${f.repro ? `\n   repro: ${f.repro}` : ''}${f.evidence ? `\n   evidence: ${f.evidence}` : ''}`).join('\n')}
 
-For each: reproduce or trace the failure scenario FIRST - if it does not actually fail, say so in your summary and
-leave that code alone; do not "fix" a non-bug. Then fix it minimally, honoring the plan's **Constraints & decisions**
-and **Out of scope**. Do not refactor beyond the fix, and do not touch the review's judgment-grade notes - those are
-the human's call.
+**Verify before you touch anything.** For a defect, reproduce or trace its repro FIRST; for a violation or an
+improvement, confirm the current code actually matches the description it is premised on. If it does not hold, that
+item is DISMISSED: change nothing for it, and report it in \`dismissed\` with one line of what the code actually does.
+Never "fix" a non-bug.
+
+Then apply each surviving item as the change states it - minimally, honoring the plan's **Constraints & decisions**
+and **Out of scope**. You EXECUTE these instructions; you do not reinterpret them into something you would rather do.
+Land the listed items ONLY: no refactoring beyond them, no acting on the reviewers' escalated notes (those are the
+human's call after the PR opens), no improvements of your own.
+
+**Demotion valve - do not churn.** If an item balloons beyond its description (it cascades into unrelated code, needs
+real rework, or turns out to move design intent or a public surface), stop work on it, revert what you started for it,
+and report it in \`demoted\` with a one-line reason. It becomes a finding on the PR instead. Demoting one item is
+normal and cheap; a half-landed item is not.
 
 Then re-prove the tree:
 1. Check gate clean: ${G.check}. Iteration tests green: ${G.iter || G.check}.
 2. Re-run the FULL gate ONCE - ${G.full} - the implementer's earlier full-gate run no longer covers this tree. Run it
    as ONE synchronous foreground shell call with a generous timeout, output captured to a file.
-3. Re-check each defect's failure scenario now behaves correctly - live on the proof surface where the scenario is
-   live-reachable, per EVIDENCE.md - and re-run any part of the plan's Validation plan your fix touched, refreshing
-   the affected screenshots.
-4. Append a "Fix addendum" to the proof artifact at ${implProofPath}: each defect, the fix, and the concrete
-   re-checked result (with any refreshed capture paths and one-line captions).
+3. Re-check each LANDED item concretely: a defect's failure scenario now behaves correctly, a violation's evidence
+   pointer now shows the intended thing - live on the proof surface wherever that is live-reachable, per EVIDENCE.md -
+   and re-run any part of the plan's Validation plan your changes touched, refreshing the affected screenshots and
+   clips (a refreshed clip still owes EVIDENCE.md's full-scenario, 5-second-floor rule).
+4. Append a "Fix addendum" to the proof artifact at ${implProofPath}: every item, what you did with it (landed /
+   dismissed / demoted, with the reason), and the concrete re-checked result - including any refreshed capture paths
+   with one-line captions.
 
 Leave ALL changes UNCOMMITTED - do not commit, push, or write anything into the repo.
 
+Account for every item exactly once across \`landed\`, \`dismissed\`, and \`demoted\`, using each item's title
+VERBATIM as listed above - the PR's per-review sections are assembled from those titles.
+
 Return exactly one outcome:
-- "proven": every confirmed defect fixed (or shown not to reproduce, and said so in the summary), gates green,
-  re-checks recorded in the Fix addendum.
-- "blocked": a defect cannot be fixed without real rework, or the fix would contradict the plan - set blocker naming
-  which defect(s) and why. Leave any partial fixes on the tree; the PR will open as a DRAFT carrying your blocker.`
+- "proven": every item is accounted for, the gates are green, and the re-checks are in the Fix addendum. Dismissals
+  and demotions are a normal part of a "proven" run - they are reported, not blockers.
+- "blocked": you cannot get the tree back to green, or you had to leave it mid-fix - set blocker with the specifics.
+  Leave the partial work on the tree; the PR will open as a DRAFT carrying your blocker.`
 
 const retroPrompt = (trajectory, implProofPath, reviewArtifacts) => `You are a retrospective on the build pipeline run that just happened - a critical read of how the RUN went, not a
 rewrite of the feature. Do NOT touch code, do NOT modify the working tree, do NOT write anything into the repo. You
@@ -728,7 +868,10 @@ Four checks are load-bearing - do them concretely, bullet by bullet, not impress
    output rather than derived from the objective, a scenario that never exercises the paths the diff actually moved,
    an observable behavior left to a unit test that a live scenario could have reached, an interactive surface whose
    human-input-path obligation (EVIDENCE.md's (a)-or-(b)) was never addressed. The implementer graded its own work -
-   you are the skeptical reader.
+   you are the skeptical reader. **Check the clips as artifacts, not just as claims**: EVIDENCE.md requires a
+   recording to cover the full scenario (steady lead-in, the behavior, the settled end state) at real-time speed with
+   a 5-second minimum floor - read each clip's actual duration off disk (e.g. \`ffprobe\`), and flag any clip under
+   the floor or too short to judge the motion it exists to show as a finding, naming the file and its real duration.
 3. **Token & time audit.** Ground this in the run's stage transcripts on disk, not impressions. Locate the run
    directory: glob \`$env:USERPROFILE\\.claude\\projects\\*\\*\\subagents\\workflows\\wf_*\\journal.jsonl\` and pick the
    journal whose text contains this run's proof path above (newest-modified as fallback). Its directory holds one
@@ -745,39 +888,76 @@ Four checks are load-bearing - do them concretely, bullet by bullet, not impress
    - **Tokens**: a stage whose spend is far out of proportion to what it contributed - retry loops re-running the
      same failing command, per-edit full-gate runs the prompts explicitly forbid, a live scenario re-driven from
      scratch after every small fix.
-   Include the compact per-stage table (stage | wall-clock | output tokens | tool calls | longest wait) in your
-   findings artifact EVEN IF nothing is anomalous - it is the run-over-run trend data the human folds back into the
-   skill. If you cannot locate the run directory, say so in the findings instead of skipping silently.
+   Return the compact per-stage table (stage | wall-clock | output tokens | tool calls | longest wait) as
+   \`auditTable\` - a markdown table, ALWAYS, even when nothing is anomalous: it is the run-over-run trend data the
+   human folds back into the skill, and it gets its own section in the PR. Set \`auditNote\` ONLY when something
+   anomalous actually happened (name the command and when), or to say you could not locate the run directory - and be
+   concise even then. Anything worth the human's action is a finding, not a note.
 4. **Review-decision audit** (a paragraph, not a stage). The plan's **Review decision** line names which reviewers
    ran and why. Judge that call against what actually shipped: a defect or design miss visible in the diff/evidence
    that a SKIPPED reviewer exists to catch, a reviewer that ran on a change too mechanical to need it, a design
-   review hamstrung by a thin or missing **Design intent** section, or an adversarial mustFix whose repro turned out
-   vague enough to burn the fix stage. Each is a process finding whose recommendation targets the Step 1 selection
-   criteria or the profile's review note - this audit is the feedback loop that keeps conditional review honest.
+   review hamstrung by a thin or missing **Design intent** section, or a fix-lane item whose stated change turned out
+   vague or wrong enough to burn the fix stage. Each is a process finding whose recommendation targets the Step 1
+   selection criteria or the profile's review note - this audit is the feedback loop that keeps conditional review
+   honest. If your verdict DISAGREES with the plan's pick, make that an explicit finding (the PR notes the
+   disagreement on its Reviews line).
 
 Beyond those, follow whatever actually looks off in THIS run - a plan hole (an ambiguity the implementer had to guess
 through, a constraint the diff quietly contradicts, an Out-of-scope line it crossed), a step that cost tokens without
 changing the outcome, a prompt or structural choice in the skill or the profile that steered the agent wrong.
 Critical discovery, not checklist coverage.
 
-Write a concise set of findings to an artifact in the OS temp dir (NOT in the repo). For each finding give four
-things: what looks off, why it matters, a concrete pointer (which plan bullet / proof claim / diff hunk), and a
-**Recommendation** - one specific, actionable change (to the plan template, a prompt in the skill, a line in the
-profile, or a follow-up for the human) - not a restated problem. If a finding is genuinely just "worth a look" with no
-action you can yet name, say so explicitly rather than inventing a fix. Keep it tight and high-signal - this review
-costs tokens too, so do NOT pad or invent findings to look thorough. If the run genuinely looks clean, say so briefly
-and stop; a short or near-empty review is a fine and honest result.
+Write the fuller reasoning to an artifact in the OS temp dir (NOT in the repo) and return its path as reviewPath: for
+each finding, what looks off, why it matters, and its concrete pointer (which plan bullet / proof claim / diff hunk /
+transcript line). Then return the findings themselves in \`findings\` - the PR renders THOSE, not your artifact, one
+numbered R-item each: \`issue\` (the finding plus its pointer, concisely) and \`recommendation\` (one specific,
+actionable change - to the plan template, a prompt in the skill, a line in the profile, or a follow-up for the human -
+never a restated problem).
 
-Return reviewPath, a 2-3 sentence summary for the run report (the headline of what you surfaced, or that nothing
-notable came up), and topFinding - the single most worth-investigating item paired with its recommended action, if any.`
+**Findings are held to an impact bar:** surface one only when its impact justifies a human's review time. A
+low-impact suggestion spawns a sub-task nobody ever gets to, which is worse than silence - so do NOT pad, do NOT
+invent findings to look thorough, and never surface something just to have something to show. Few or none is a good,
+honest result; if the run genuinely looks clean, return an empty \`findings\` (the \`auditTable\` is still owed) and
+say so in the summary. If a finding is genuinely just "worth a look" with no action you can yet name, say that
+plainly in its recommendation rather than inventing a fix.
 
-const prPrompt = (implProofPath, reviewPath, reviewNotes, fixedTitles, draftReason) => `Open a PR for the change on the current working tree.
+Also return: a 2-3 sentence summary for the run report (the headline of what you surfaced, or that nothing notable
+came up), and topFinding - the single most worth-investigating item paired with its recommended action, if any.`
+
+// Fix-lane bookkeeping, shared by the draft decision and the PR body. Items are matched back to the reviewer that
+// raised them by their VERBATIM title - which is why the fix stage is told to echo titles exactly.
+const itemByTitle = (items, title) => items.filter(i => i.title === title)[0] || null
+const fixLine = (lane, fixResult, items) => {
+  if (!fixResult) return ''
+  const mine = (title) => { const it = itemByTitle(items, title); return !!it && it.lane === lane }
+  const landed = fixResult.landed.filter(mine)
+  const demoted = fixResult.demoted.filter(d => mine(d.title))
+  const dismissed = fixResult.dismissed.filter(d => mine(d.title))
+  const parts = []
+  if (landed.length) parts.push(`landed and re-proven: ${landed.join('; ')}`)
+  if (demoted.length) parts.push(`demoted to a finding below: ${demoted.map(d => `${d.title} (${d.reason})`).join('; ')}`)
+  if (dismissed.length) parts.push(`dismissed as not real: ${dismissed.map(d => `${d.title} (${d.reason})`).join('; ')}`)
+  return parts.join(' | ')
+}
+
+// One PR section per review lane that ran, findings numbered A#/D#/R# - the ids the human triages by.
+const renderSection = (id, title, fixedLine, findings) => {
+  const lines = [`### ${title}`, '']
+  if (fixedLine) lines.push(`_Fixed in-run: ${fixedLine}_`, '')
+  if (findings.length) findings.forEach((f, i) => { lines.push(`- **${id}${i + 1}.** ${f.issue}`, `  Recommended: ${f.recommendation}`) })
+  else lines.push('_No findings surfaced._')
+  return lines.join('\n')
+}
+const deadSection = (title) => `### ${title}\n\n_The stage died with no result - nothing was reviewed on this lane._`
+
+const prPrompt = (implProofPath, reviewsLine, findingsBlock, auditTable, auditNote, draftReason) => `Open a PR for the change on the current working tree.
 Follow ${SKILLDIR}/PR-FORMAT.md for the branch/commit/PR-body conventions, AND the "PR & publish" section of the repo
 profile at ${PROFILE} for this repo's specifics - the architecture-section format and vocabulary, the Try-it command,
 the evidence bundle location, and the publish command with its credential source and fallback. Read both first; the
-profile wins where they differ. The my-build-full-specific addition below is the Process notes section.
-- The plan is at ${PLAN}. The implementer self-proof is at ${implProofPath} and the retrospective findings are at
-  ${reviewPath} (both in temp - read them for the body, do NOT copy them into the repo or commit them).
+profile wins where they differ. The my-build-full-specific additions below are the Reviews line, the per-review
+findings sections, and the Token & time audit section.
+- The plan is at ${PLAN}. The implementer self-proof is at ${implProofPath} (in temp - read it for the body and for
+  the evidence bundle, do NOT copy it into the repo or commit it).
 - Branch \`build/${SLUG}\` per PR-FORMAT.md (append -2, -3, ... if taken).
 ${G.fmt ? `- Fmt before the commit: ${G.fmt}. If it reflows a file outside the logical diff, leave that file out of the commit.\n` : ''}- **Evidence bundle.** Assemble the bundle at the profile's bundle location per PR-FORMAT.md: an \`index.html\`
   telling the validation story claim by claim - the scenario run and the concrete observed results vs what the plan
@@ -794,34 +974,40 @@ ${G.fmt ? `- Fmt before the commit: ${G.fmt}. If it reflows a file outside the l
   change and the incoming work - then run the full gate instead (${G.full}): the resolution is code no stage has
   tested. The profile's PR & publish section may additionally require re-running live validation - honor it. Merge
   brought in nothing -> nothing to do.
-- Open a ${draftReason ? `DRAFT PR (\`gh pr create --draft\`) - unresolved must-fix findings exist: ${draftReason}. Lead the Review notes section with that, verbatim` : 'ready-for-review PR'} against the default branch with \`gh\`. If gh is not authenticated, skip the PR and the
+- Open a ${draftReason ? `DRAFT PR (\`gh pr create --draft\`) - this run left something unresolved: ${draftReason}. Say that verbatim on the Reviews line (see below)` : 'ready-for-review PR'} against the default branch with \`gh\`. If gh is not authenticated, skip the PR and the
   publish, leave the commit on the branch, and report "PR not opened: gh not authed".
 - **Publish the evidence** once the PR number exists, exactly per the profile's publish command and fallback. On
   success, \`gh pr edit\` the review URL into the Validation section. If publishing fails, keep the PR, reference the
   bundle's local path instead, and report the publish error - never block the PR on it.
 ${TICKET ? `- **Work-queue ticket.** This run ships ticket ${TICKET.id}. After the PR is open and the evidence link is in,
   post the PR URL on the ticket (one line: the URL plus "PR opened by my-build-full"): ${TICKET.note}${draftReason ? `. The PR
-  is a DRAFT, so do NOT close the ticket - it stays In Progress until the must-fix findings are resolved; the post-PR
-  triage closes it` : `. Then close the ticket: ${TICKET.close}`}. If the PR was not opened (gh not authed), leave the ticket
+  is a DRAFT, so do NOT close the ticket - it stays In Progress until that is resolved; the post-PR triage closes
+  it` : `. Then close the ticket: ${TICKET.close}`}. If the PR was not opened (gh not authed), leave the ticket
   untouched. Either way, state the ticket's end state in your return value.
 ` : ''}- **CI tail** (per PR-FORMAT.md): after the PR is open and the evidence link is in, run \`gh pr checks <number>\`. No
   checks reported -> the repo has no PR CI; move on. Otherwise wait for the checks to conclude (cap the wait at ~15
   minutes); on a failure make AT MOST ONE fix attempt (read the failing log, fix, commit, push, re-check once), then
   stop either way. Fold the final CI state into your return value ("CI green" / "CI red: <reason>" / "CI still
   running after 15m") - a persistently red PR is the human's call, never a reason to loop or close the PR.
-- PR body, assembled from the plan + the proof, per PR-FORMAT.md's baseline sections (Objective, Architecture
-  changes in the profile's format, Try it from the profile, Validation as link + claim lines) plus:
-  - **Review notes (triage before merge)** - ${reviewNotes.length ? `EXACTLY these items, numbered 1..${reviewNotes.length} in this order (the numbering is
-    how the human refers to them post-PR; do not reorder, reword, merge, or drop any):
-${reviewNotes.map((n, i) => `    ${i + 1}. ${n}`).join('\n')}
-    Preface the list with one line: these are judgment findings to triage before merge - addressed on THIS
-    branch/PR, or consciously waved through; never a follow-up PR.` : ((REV.adversarial || REV.design) ? 'the reviewers ran and surfaced no judgment findings - say so in one line.' : 'omit this section entirely; the run had no reviewers (per the plan\'s Review decision).')}
-${fixedTitles.length ? `  - Add one line at the top of the Validation section: ${fixedTitles.length} defect(s) confirmed by the adversarial
-    review were fixed in-run and re-proven (see the proof's Fix addendum): ${fixedTitles.join('; ')}.
-` : ''}  - **Process notes (for follow-up)** - inline the contents of the retrospective findings at ${reviewPath} verbatim.
-    These are what the run surfaced about the plan and the pipeline itself - plan holes, proof gaps, process leaks -
-    for a human to investigate separately and fold back into the skill or profile; leads, not blockers. Do NOT commit
-    the artifact; paste its text. If the findings are empty, write "No notable process issues surfaced this run."
+- PR body, assembled from the plan + the proof, per PR-FORMAT.md's baseline sections (Objective, Architecture changes
+  in the profile's format, Try it from the profile, Validation as the evidence link ONLY - no claim-by-claim prose in
+  the PR; the claims live on the evidence page) plus these three my-build-full sections, in this order:
+  - **Reviews** - one bare line naming which reviews ran: \`Reviews: ${reviewsLine}\`. Add reasoning ONLY if
+    something is off - ${draftReason ? `and it is: append that this PR opened as a DRAFT because ${draftReason}` : 'a review stage died (the line above says so), or a Retro finding below says the plan\'s review decision was the wrong call - in which case add that one clause. Nothing off -> the bare line alone, no commentary'}.
+  - **Review findings (triage before merge)** - paste the block below VERBATIM as the section's content. The \`A#\` /
+    \`D#\` / \`R#\` ids are how the human refers to a finding in post-PR triage: do not renumber, reorder, reword,
+    merge, or drop any of it, and do not add findings of your own. Preface the section with one line: these are
+    triaged before merge - addressed on THIS branch/PR, or consciously waved through; never a follow-up PR.
+<<<FINDINGS
+${findingsBlock}
+FINDINGS>>>
+  - **Token & time audit** - paste this per-stage table verbatim; it is run-over-run trend data, so it ships even
+    when nothing is anomalous:
+<<<AUDIT
+${auditTable || '_the retro could not produce the audit table this run._'}
+AUDIT>>>
+${auditNote ? `    Then one line, verbatim: ${auditNote}` : '    Add no prose beneath it - nothing anomalous was reported.'}
+  The \`<<<...>>>\` markers are delivery wrappers - paste what is between them, never the markers themselves.
 Return the PR URL and the CI-tail outcome, or the branch name if gh wasn't authed.`
 
 phase('Implement')
@@ -857,10 +1043,11 @@ if (impl.outcome === 'blocked') return { status: 'blocked', blocker: impl.blocke
 if (impl.outcome === 'cant_prove') return { status: 'cant_prove', missingTooling: impl.missingTooling, summary: impl.summary }
 
 // Review is conditional per Step 1's review decision - the always-on audit it replaces was removed 2026-07-05
-// (31 runs, one real catch, ~29% of a run's output tokens). Reviewers are read-only and artifact-based; only a
-// confirmed, repro-backed defect spins up the fix stage. A dead review or a failed fix never kills the run - it
-// downgrades the PR to a draft, so the work and the evidence still reach the human.
+// (31 runs, one real catch, ~29% of a run's output tokens). Reviewers are read-only and artifact-based; EITHER one's
+// fix lane spins up the fix stage. A dead review or a failed fix never kills the run - it downgrades the PR to a
+// draft, so the work and the evidence still reach the human.
 let adv = null, design = null, fix = null, draftReason = ''
+let fixItems = []
 if (REV.adversarial || REV.design) {
   phase('Review')
   const [a, d] = await parallel([
@@ -869,36 +1056,75 @@ if (REV.adversarial || REV.design) {
   ])
   adv = a; design = d
   if (REV.adversarial && !adv) draftReason = 'the adversarial review stage died - defect status unknown'
-  if (adv && adv.mustFix.length) {
-    fix = await agent(fixPrompt(adv, impl.proofPath), { phase: 'Review', label: 'fix', schema: IMPL_SCHEMA, model: MODEL, ...AG(AGENTS.impl) })
-    if (!fix || fix.outcome !== 'proven') draftReason = fix ? (fix.blocker || fix.summary) : 'the fix stage died with confirmed defects outstanding'
+  fixItems = [
+    ...(adv ? adv.fix.map(f => ({ ...f, lane: 'adversarial' })) : []),
+    ...(design ? design.fix.map(f => ({ ...f, lane: 'design' })) : []),
+  ]
+  if (fixItems.length) {
+    const artifacts = [
+      adv ? `- the adversarial review's findings: ${adv.findingsPath}` : null,
+      design ? `- the design review's findings: ${design.findingsPath}` : null,
+    ].filter(Boolean).join('\n')
+    fix = await agent(fixPrompt(fixItems, artifacts, impl.proofPath), { phase: 'Review', label: 'fix', schema: FIX_SCHEMA, model: MODEL, ...AG(AGENTS.impl) })
+    if (!fix) draftReason = 'the fix stage died with review fix items outstanding'
+    else if (fix.outcome !== 'proven') draftReason = fix.blocker || fix.summary
+    else {
+      // Draft semantics stay narrow: only an unlanded DEFECT or VIOLATION drafts the PR. A demoted improvement is
+      // just a finding. (A dismissed item is one the fix stage verified was never real - it drafts nothing.)
+      const stuck = fix.demoted.filter(d => { const it = itemByTitle(fixItems, d.title); return it && (it.kind === 'defect' || it.kind === 'violation') })
+      if (stuck.length) draftReason = `${stuck.length} confirmed defect/violation(s) left unfixed, demoted to PR finding(s): ${stuck.map(d => `${d.title} (${d.reason})`).join('; ')}`
+    }
   }
 }
-const reviewNotes = [
-  ...(adv ? adv.notes.map(n => `[code] ${n}`) : []),
-  ...(design ? design.notes.map(n => `[design] ${n}`) : []),
-]
-const fixedTitles = (fix && fix.outcome === 'proven' && adv) ? adv.mustFix.map(f => f.title) : []
 
 // The Retro still ALWAYS runs; its load-bearing checks are Done-when conformance and proof-vs-diff consistency,
 // plus the review-decision audit on reviewed runs.
 phase('Retro')
+const laneCounts = (r) => `${r.fix.length} fix item(s), ${r.notes.length} escalated note(s)`
 const trajLines = [
   `- Implement: ${impl.outcome}.${TOTAL ? ` (decomposed: ${PAR.length} parallel + ${SEQ.length} sequential pieces, then integrate-and-prove)` : ''} ${impl.summary}`,
 ]
-if (REV.adversarial) trajLines.push(adv ? `- Adversarial review: ${adv.mustFix.length} confirmed defect(s), ${adv.notes.length} judgment note(s). ${adv.summary}` : '- Adversarial review: stage died (no result).')
-if (REV.design) trajLines.push(design ? `- Design review: ${design.notes.length} judgment note(s). ${design.summary}` : '- Design review: stage died (no result).')
-if (adv && adv.mustFix.length) trajLines.push(fix ? `- Fix: ${fix.outcome}. ${fix.summary}` : '- Fix: stage died (no result).')
+if (REV.adversarial) trajLines.push(adv ? `- Adversarial review: ${laneCounts(adv)}. ${adv.summary}` : '- Adversarial review: stage died (no result).')
+if (REV.design) trajLines.push(design ? `- Design review: ${laneCounts(design)}. ${design.summary}` : '- Design review: stage died (no result).')
+if (fixItems.length) trajLines.push(fix ? `- Fix: ${fix.outcome}. Landed ${fix.landed.length}/${fixItems.length}, dismissed ${fix.dismissed.length}, demoted ${fix.demoted.length}. ${fix.summary}` : '- Fix: stage died (no result).')
 const trajectory = trajLines.join('\n')
 const reviewArtifacts = [
   adv ? `- the adversarial review findings: ${adv.findingsPath} (in temp)` : null,
   design ? `- the design review findings: ${design.findingsPath} (in temp)` : null,
 ].filter(Boolean).join('\n')
 const retro = await agent(retroPrompt(trajectory, impl.proofPath, reviewArtifacts), { phase: 'Retro', label: 'retro', schema: RETRO_SCHEMA, model: MODEL, ...AG(AGENTS.light) })
+const R = retro || { findings: [], auditTable: '', auditNote: '', topFinding: '', reviewPath: '' }
+
+// Assemble the PR's per-review sections here so the PR stage pastes them verbatim: the A/D/R ids are how the human
+// refers to a finding in post-PR triage, so no stage downstream may reorder, reword, merge, or drop one.
+const laneFindings = (lane, notes) => [
+  ...notes,
+  ...(fix ? fix.demoted : []).filter(d => { const it = itemByTitle(fixItems, d.title); return it && it.lane === lane })
+    .map(d => { const it = itemByTitle(fixItems, d.title); return { issue: `${d.title} - flagged for the in-run fix lane, demoted by the fix stage: ${d.reason}`, recommendation: it.change } }),
+]
+const advFindings = adv ? laneFindings('adversarial', adv.notes) : []
+const designFindings = design ? laneFindings('design', design.notes) : []
+const retroFindings = R.findings || []
+const sections = []
+if (REV.adversarial) sections.push(adv ? renderSection('A', 'Adversarial review', fixLine('adversarial', fix, fixItems), advFindings) : deadSection('Adversarial review'))
+if (REV.design) sections.push(design ? renderSection('D', 'Design review', fixLine('design', fix, fixItems), designFindings) : deadSection('Design review'))
+sections.push(retro ? renderSection('R', 'Retro', '', retroFindings) : deadSection('Retro'))
+const reviewsLine = [
+  REV.adversarial ? (adv ? 'adversarial' : 'adversarial (STAGE DIED)') : null,
+  REV.design ? (design ? 'design' : 'design (STAGE DIED)') : null,
+  retro ? 'retro' : 'retro (STAGE DIED)',
+].filter(Boolean).join(', ')
 
 phase('PR')
-const pr = await agent(prPrompt(impl.proofPath, retro.reviewPath, reviewNotes, fixedTitles, draftReason), { phase: 'PR', label: 'open-pr', model: MODEL, ...AG(AGENTS.light) })
-return { status: 'pass', pr, retroFinding: retro.topFinding || '', reviewNotes, fixedDefects: fixedTitles, draft: !!draftReason, draftReason }
+const pr = await agent(prPrompt(impl.proofPath, reviewsLine, sections.join('\n\n'), R.auditTable || '', R.auditNote || '', draftReason), { phase: 'PR', label: 'open-pr', model: MODEL, ...AG(AGENTS.light) })
+return {
+  status: 'pass', pr, reviewsLine,
+  findings: { adversarial: advFindings, design: designFindings, retro: retroFindings },
+  fixedInRun: fix ? fix.landed : [], dismissed: fix ? fix.dismissed : [], demoted: fix ? fix.demoted : [],
+  auditTable: R.auditTable || '', auditNote: R.auditNote || '',
+  retroSummary: R.summary || '', retroFinding: R.topFinding || '', retroPath: R.reviewPath || '',
+  draft: !!draftReason, draftReason,
+}
 ```
 
 ## Step 2b - Decomposed build (pieces)
@@ -949,10 +1175,11 @@ When the Workflow completes, report compactly based on its return value:
 
 - `status: pass` -> the PR URL and its CI-tail state (or branch name if `gh`
   wasn't authed), and whether it opened as a **DRAFT** (`draft: true`) - if so,
-  lead with `draftReason`: unresolved must-fix findings are the first thing the
-  human must look at. Relay the work-queue ticket's end state when the run
-  carried one (closed, or left In Progress - the PR stage's return names it).
-  Then run the **post-PR triage** below.
+  lead with `draftReason`: an unresolved defect or design-intent violation (or a
+  review stage that died) is the first thing the human must look at. Relay the
+  work-queue ticket's end state when the run carried one (closed, or left In
+  Progress - the PR stage's return names it). Then run the **post-PR triage**
+  below.
 - `status: blocked` -> no PR; the implementer hit a blocker it wouldn't guess
   past. Quote `blocker` so the user can resolve the ambiguity or fix the plan. A
   decomposed run's summary names the failing piece (and, for a parallel wave, the
@@ -970,33 +1197,39 @@ session lean - relay compactly from the return value, spawn fresh subagents for
 any follow-up work, and never read the findings artifacts, the proof, or the PR
 diff into the main context.
 
-1. **Relay the triage list.** Print `reviewNotes` verbatim, numbered exactly as
-   returned (the numbering matches the PR's Review notes section), `fixedDefects`
-   in one line ("fixed in-run: ..."), and `retroFinding` with a pointer to the
-   PR's Process notes for the rest. Empty everything -> say the run came back
-   clean and the PR is ready for the human's own read.
-2. **The human picks** which notes to address (by number), which to consciously
+1. **Relay the triage list.** Print the returned `findings`, lane by lane, with
+   the ids the PR uses - `findings.adversarial` as `A1..`, `findings.design` as
+   `D1..`, `findings.retro` as `R1..` - each item's issue and recommendation
+   verbatim, in the returned order (never renumber or reorder; the ids are how the
+   human names them). Then `fixedInRun` in one line ("fixed in-run: ..."), plus
+   `demoted` and `dismissed` in one line each if non-empty, then `retroSummary`
+   and `retroFinding`. Point at the PR's Token & time audit section for the run's
+   cost table rather than reprinting it (`retroPath` has the fuller reasoning if
+   the human asks). Empty findings everywhere -> say the run came back clean and
+   the PR is ready for the human's own read.
+2. **The human picks** which findings to address (by id), which to consciously
    skip, plus anything from their own read of the PR. Do not pre-filter, rank, or
    advocate - the worth-addressing judgment is precisely the part of this
    workflow that stays human. Wait for their reply; there is nothing to do
    proactively here.
 3. **Address on the SAME branch/PR - never a follow-up PR.** On selection, spawn
    ONE fresh subagent (Agent tool; the profile's impl worker type if it names
-   one) seeded with: the PR number and branch, the selected note texts verbatim,
-   the plan path, and the profile + EVIDENCE.md paths. Its instructions: make the
-   selected changes on the PR branch, honoring the plan's Constraints & decisions;
-   run the check gate and iteration tests, plus the full gate once if the change
-   is more than trivial; re-prove live any proof claim it touched and refresh the
-   affected evidence; if media changed, rebuild the evidence bundle and re-publish
-   per the profile (fresh immutable URL -> `gh pr edit` it in); push to the same
-   branch; comment on the PR naming which numbered items it addressed. Relay its
-   report in a sentence or two. Repeat as the human asks for more rounds.
-4. **Process notes are a different lane.** Retro findings are edits to this skill
-   or the repo profile, not to the branch - handle them in-session with the human
-   when they take one up, or leave them as leads.
+   one) seeded with: the PR number and branch, the selected findings' ids plus
+   their issue and recommendation verbatim, the plan path, and the profile +
+   EVIDENCE.md paths. Its instructions: make the selected changes on the PR
+   branch, honoring the plan's Constraints & decisions; run the check gate and
+   iteration tests, plus the full gate once if the change is more than trivial;
+   re-prove live any proof claim it touched and refresh the affected evidence; if
+   media changed, rebuild the evidence bundle and re-publish per the profile
+   (fresh immutable URL -> `gh pr edit` it in); push to the same branch; comment
+   on the PR naming which ids it addressed. Relay its report in a sentence or
+   two. Repeat as the human asks for more rounds.
+4. **The Retro lane (`R#`) is a different kind of fix.** Those findings are edits
+   to this skill or the repo profile, not to the branch - handle them in-session
+   with the human when they take one up, or leave them as leads.
 5. **Merging stays the human's call.** Never merge, close, or mark the draft
-   ready yourself - a draft PR converts only after its must-fix findings are
-   resolved on the branch.
+   ready yourself - a draft PR converts only after the defect or violation in its
+   `draftReason` is resolved on the branch.
 6. **Ticket close-out.** A draft PR (or an unauthed-gh run) leaves the run's
    work-queue ticket In Progress. When the human marks the PR ready after fixes
    (or the PR finally opens), close the ticket with the profile's Work queue

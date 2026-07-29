@@ -59,7 +59,8 @@ this document and the profile differ, the profile wins.
 ## PR body - baseline sections
 
 Keep prose minimal; let the images carry the proof. (SKILL.md layers its own extra
-sections on top - Process notes, and Review notes on reviewed runs.)
+sections on top - the Reviews line, a findings section per review lane that ran,
+and the Token & time audit.)
 
 - **Objective** - 1-2 sentences.
 - **Architecture changes** - how the structure shifted, as an ASCII tree in a
@@ -78,17 +79,15 @@ sections on top - Process notes, and Review notes on reviewed runs.)
   checked out in>` on one line, the profile's Try-it launch command on the next.
   Verify the path with `git rev-parse --show-toplevel` before writing it; the
   reviewer shouldn't have to track the worktree down.
-- **Validation** - mostly a link: the section leads with
+- **Validation** - the evidence link, and nothing else: the section is
   `[Validation evidence](<review URL>)` - the published evidence page (see
   "Publish & link" below; use the placeholder `_evidence: publishing..._` at
-  creation and `gh pr edit` the real URL in once the publish succeeds). Then the
-  proof, claim by claim: one line of prose per claim (the scenario run and the
-  concrete observed results vs expected) so the PR is skimmable without leaving
-  GitHub. The media renders on the evidence page beside each claim - embed no
-  images in the PR body and commit none. On the page, lead with the motion clip
-  for anything that moves; for an asset swap, lead with the before/after. Never
-  write "tests pass" or "gate clean" as the proof - a green gate is a baseline
-  requirement, not validation evidence.
+  creation and `gh pr edit` the real URL in once the publish succeeds, or the
+  bundle's local path if the publish failed). The claim-by-claim story lives on
+  that page, told once, with each clip/screenshot rendered beside the claim it
+  proves - do not restate it as prose here, embed no images in the PR body, and
+  commit none. Never write "tests pass" or "gate clean" as the proof - a green
+  gate is a baseline requirement, not validation evidence.
 
 ## Evidence bundle (load-bearing mechanics)
 
@@ -101,10 +100,12 @@ NOT as committed images:
   descriptively from what each shows (e.g. `knight-runs-east.gif`,
   `after-newgame.png`). Media paths in the HTML are relative (the bundle must
   survive being moved or zipped); no base64 embedding for large media.
-- **The page tells the validation story** claim-by-claim, mirroring the PR's
-  Validation section: each claim as a line of text with its clip/screenshot
-  rendered immediately beside it - a reviewer opens one page and sees every claim
-  against its evidence.
+- **The page tells the validation story** claim-by-claim - it is the only place
+  that story is told, since the PR's Validation section is just the link: each
+  claim as a line of text (the scenario run, the concrete observed results vs what
+  was expected) with its clip/screenshot rendered immediately beside it. A reviewer
+  opens one page and sees every claim against its evidence. Lead with the motion
+  clip for anything that moves; for an asset swap, lead with the before/after.
 - **Publish rules.** The bundle is what gets published, so it must satisfy the
   publish contract the profile points at: `index.html` at the bundle root, all
   media referenced by relative path, fully self-contained (no CDN/external

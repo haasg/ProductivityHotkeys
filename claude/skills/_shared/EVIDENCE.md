@@ -52,6 +52,16 @@ never loose in the repo tree; the PR step assembles them into the evidence bundl
 nothing visible to show. For an asset swap, the before/after of the asset in place
 is the lead evidence.
 
+**A clip must cover the full scenario, with a 5-second floor.** Record a beat of
+steady lead-in, the behavior itself, and the settled end state it leaves behind,
+at real-time playback speed - never sped up, never trimmed to just the moving
+frames. **Five seconds is the minimum**; a clip under the floor, or one too short
+for a reviewer to judge the motion it exists to show, is a flagged finding, not
+acceptable evidence (this has happened: few-frame clips shipped as compliant proof
+because no duration rule existed). If the behavior itself is briefer than the
+floor, pad it with the steady states around it - lead-in and settle are part of
+what a reviewer reads.
+
 **Evidence scales with content risk, not visual surface.** A change adding N
 player-facing content/decision paths owes evidence per path: a shot of each path
 live, or an explicitly-justified note tying it to a live-proven twin (same
