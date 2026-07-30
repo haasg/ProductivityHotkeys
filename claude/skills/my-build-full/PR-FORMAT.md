@@ -12,7 +12,8 @@ this document and the profile differ, the profile wins.
   changes carry over). If that name is taken, append `-2`, `-3`, ... until it's
   free.
 - Assemble the evidence bundle at the profile's bundle location (see "Evidence
-  bundle" below). Commit NOTHING from temp and no media - no screenshots, no
+  bundle" below) - full-evidence runs only; a light-evidence run assembles no
+  bundle at all. Commit NOTHING from temp and no media - no screenshots, no
   clips, no plan/proof/review/retro `.md` files; if one ended up under the repo
   outside the profile's sanctioned gitignored homes, remove it before committing.
 - Run the profile's fmt command first (if it names one) so the commit is
@@ -46,21 +47,21 @@ this document and the profile differ, the profile wins.
   authed" with the branch name (skip the publish too - there is no PR number to
   publish under).
 - After the PR exists, publish the evidence bundle and edit the review URL into
-  the body (see "Publish & link" below).
-- **CI tail.** After the PR is open and the evidence link is in, run
-  `gh pr checks <number>`. No checks reported -> the repo has no PR CI; you're
-  done. Otherwise wait for the checks to conclude (poll; cap the wait at ~15
-  minutes). On a failure, make AT MOST ONE fix attempt - read the failing log,
-  fix, commit, push, re-check once - then stop either way and report the final CI
-  state alongside the PR URL ("CI green" / "CI red: <reason>" / "CI still running
-  after 15m"). Never loop past one attempt; a persistently red PR is the human's
-  call.
+  the body (see "Publish & link" below) - full-evidence runs only.
+- **CI tail.** Once the PR is open (and, on a full-evidence run, the evidence
+  link is in), run `gh pr checks <number>`. No checks reported -> the repo has no
+  PR CI; you're done. Otherwise wait for the checks to conclude (poll; cap the
+  wait at ~15 minutes). On a failure, make AT MOST ONE fix attempt - read the
+  failing log, fix, commit, push, re-check once - then stop either way and report
+  the final CI state alongside the PR URL ("CI green" / "CI red: <reason>" / "CI
+  still running after 15m"). Never loop past one attempt; a persistently red PR is
+  the human's call.
 
 ## PR body - baseline sections
 
 Keep prose minimal; let the images carry the proof. (SKILL.md layers its own extra
 sections on top - the Reviews line, a findings section per review lane that ran,
-and the Token & time audit.)
+and, on a full retro, the Token & time audit.)
 
 - **Objective** - 1-2 sentences.
 - **Architecture changes** - how the structure shifted, as an ASCII tree in a
@@ -79,17 +80,33 @@ and the Token & time audit.)
   checked out in>` on one line, the profile's Try-it launch command on the next.
   Verify the path with `git rev-parse --show-toplevel` before writing it; the
   reviewer shouldn't have to track the worktree down.
-- **Validation** - the evidence link, and nothing else: the section is
-  `[Validation evidence](<review URL>)` - the published evidence page (see
-  "Publish & link" below; use the placeholder `_evidence: publishing..._` at
-  creation and `gh pr edit` the real URL in once the publish succeeds, or the
-  bundle's local path if the publish failed). The claim-by-claim story lives on
-  that page, told once, with each clip/screenshot rendered beside the claim it
-  proves - do not restate it as prose here, embed no images in the PR body, and
-  commit none. Never write "tests pass" or "gate clean" as the proof - a green
-  gate is a baseline requirement, not validation evidence.
+- **Validation** - two variants. `my-build-full`'s plan picks which, in its
+  **Scope & risk** section, and **full is the default**:
+  - **Full** - the evidence link, and nothing else: the section is
+    `[Validation evidence](<review URL>)` - the published evidence page (see
+    "Publish & link" below; use the placeholder `_evidence: publishing..._` at
+    creation and `gh pr edit` the real URL in once the publish succeeds, or the
+    bundle's local path if the publish failed). The claim-by-claim story lives on
+    that page, told once, with each clip/screenshot rendered beside the claim it
+    proves - do not restate it as prose here.
+  - **Light** - no bundle is assembled and nothing is published, so the claims
+    live in this section instead: the one-line validation claims read out of the
+    proof artifact (the scenario run and the concrete observed result vs what was
+    expected), primary behavior first, then each edge the proof reached - and then
+    one last line, `Proof artifact: <absolute path of the artifact in temp>`. The
+    media stays in that artifact's directory, unpublished.
+
+  Either way: embed no images in the PR body and commit none. Never write "tests
+  pass" or "gate clean" as the proof - a green gate is a baseline requirement, not
+  validation evidence. And light scales the *packaging*, never the *proving*: the
+  change was still driven live and captured per EVIDENCE.md before the PR stage
+  ever ran.
 
 ## Evidence bundle (load-bearing mechanics)
+
+This whole section, and "Publish & link" below it, applies to a **full**-evidence
+run. On a light-evidence run there is no bundle and no publish - the claims and the
+proof-artifact path go straight in the Validation section above.
 
 The proof media ships as a self-contained bundle at the profile's bundle location,
 NOT as committed images:

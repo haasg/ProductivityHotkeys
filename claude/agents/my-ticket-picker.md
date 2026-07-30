@@ -60,6 +60,13 @@ f. **Nothing survives?** Widen to the next batch of candidates once. If that is
   grill session, so never summarise it
 - `rationale`: the one line from (e); for a named ticket, any flags the checks
   raised (or "none")
+- `scope`: one line - the estimated scope (`small` / `standard` / `large`) plus
+  the main risk in a few words, e.g. "small - one prompt file; risk: the wording
+  is quoted by two other skills". Judge it from the description you just read in
+  full: how many surfaces it touches, whether anything user-visible moves, how
+  much of it is unknown. This is a SEED for the grill's own sizing call, not a
+  verdict - the grill reads the code and confirms or overrides it - so estimate
+  honestly rather than defensively.
 
 For no survivors after widening: each candidate with its one-line rejection
 reason, so the caller can put the choice to the user. If the queue has nothing

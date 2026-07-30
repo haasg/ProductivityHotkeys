@@ -38,12 +38,14 @@ Then, using the queue CLI the profile names:
      checks and reports what they flagged.
 
    The picker returns either the chosen ticket - ID, title, URL, priority, full
-   description, and a one-line rationale naming any higher-ranked candidate it
-   skipped and why - or a no-survivor report listing each candidate with its
-   rejection reason. Relay the rationale to the user; the skip has to be
-   visible, since naming a ticket is how the user overrules the heuristic. On a
-   no-survivor report, present it and ask which ticket to take. If nothing is
-   grabbable at all, report that and stop.
+   description, a one-line estimated-scope line (`small` / `standard` /
+   `large` plus the main risk), and a one-line rationale naming any
+   higher-ranked candidate it skipped and why - or a no-survivor report listing
+   each candidate with its rejection reason. Relay both the rationale and the
+   scope estimate to the user; the skip has to be visible, since naming a ticket
+   is how the user overrules the heuristic. On a no-survivor report, present it
+   and ask which ticket to take. If nothing is grabbable at all, report that and
+   stop.
 
    If the `my-ticket-picker` agent type is unavailable, read its definition
    file and run the same doctrine inline, and say so - never silently invent a
@@ -81,7 +83,12 @@ Then, using the queue CLI the profile names:
    plus whether the session stamp landed.
 5. **Grill it.** Invoke the `my-grill` skill with the ticket as its topic - pass
    the ID, title, and the full description text as the argument so the grill
-   starts with a real topic, never an unfilled placeholder.
+   starts with a real topic, never an unfilled placeholder. Append the picker's
+   scope line to that argument, labelled as what it is: a seed for the grill's
+   own sizing step to confirm or override, e.g. `Picker scope seed (not
+   binding - confirm or override): small - one prompt file; risk: ...`. The
+   picker read only the ticket; the grill reads the code, so the grill's call
+   wins.
 
 Marking the ticket done is NOT part of this skill - that happens when the
 resulting work actually ships: `/my-build-full`'s ticket linkage closes it when

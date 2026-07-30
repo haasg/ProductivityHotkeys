@@ -28,6 +28,44 @@ repo-specific parts come from a profile.
 Everywhere below that names *the profile*, use what that file says. Never carry
 another repo's vocabulary, toolchain, or conventions into this session.
 
+**Step 0.6 - size the work, then scale the grill to it.** Before any deep doc
+exploration, make ONE explicit scope/risk call and state it to me in a sentence -
+e.g. "small scope, low risk: one-file content fix, nothing player-visible moves",
+or "large scope, high risk: moves the chokepoint three units read". There is no
+tier enum: the statement plus its reasoning IS the mechanism, and it drives each
+knob below independently. This is the same "earned per task, never flat-rate"
+discipline my-build-full applies to its reviewer selection.
+
+What the call drives:
+
+- **Small** -> load only the docs and code the touched surface actually needs
+  (not the full walk of the profile's **Docs** section), and run ONE consolidated
+  round: the scope/risk statement, the intended approach, and any residual
+  questions inline - possibly zero questions.
+- **Not clearly small** -> the normal multi-round tree walk below, unchanged. In
+  doubt, it is not small.
+- **Verification is not one of the knobs.** The verify-before-pinning discipline
+  holds at EVERY size, scoped to the touched surface: existence-probe the carrying
+  surface, check pinned arithmetic against current source values, cross-reference
+  what I claim against the code. Sizing decides how WIDE you read - never whether
+  you check.
+- **Pin the two pipeline knobs** here too, as part of this session's decisions
+  ledger, with one line of rationale each, so the wrap-up build inherits them:
+  - `evidence: full|light` - does the run publish a full evidence bundle, or ship
+    the one-line claims plus the local proof-artifact path on the PR? **FULL, no
+    exception, whenever anything player-visible moved** (user-visible, in a repo
+    that is not a game).
+  - `retro: full|light` - light keeps the Done-when and proof-vs-diff checks;
+    full adds the token & time audit and the review/scope-decision audit.
+  Light is a claim that this run is small AND unsurprising. Proof itself never
+  scales: the build still drives the change live and captures it per the proof
+  doctrine.
+
+On the ticket path (`/my-grab-ticket` -> grill -> build) the invocation carries
+the picker's estimated scope as a **seed**. It is one input to this call and never
+binding - confirm it or override it out loud, since you read the surface and the
+picker only read the ticket.
+
 Interview me until we reach shared understanding - walk every branch of the design
 tree, challenge the plan against the existing domain model, sharpen terminology,
 and update the docs inline as decisions crystallise. **Batch every independent
@@ -88,6 +126,31 @@ recommendation:
 For open-ended questions (no discrete options), just ask in prose - don't invent
 fake options to fit the a/b/c format. Make every question answerable in one pass
 so I can reply to the whole round in a single message.
+
+### Offer the `go` on the final round
+
+Whenever a round's questions are the last known open branches - at any size, not
+just a small one - end the round with this offer: "if these answers spawn no
+follow-ups, include `go` in your reply and I fire <wrap-up default> immediately."
+Name the actual default from the profile's **Wrap-up options** section (e.g.
+`/my-build-full` outside a batch, `/slice` inside one), never a generic "the
+build".
+
+- A reply containing `go`, with no new open branches -> briefly restate the
+  resolved decisions so the alignment is explicit in the conversation, then invoke
+  that wrap-up skill directly. No separate wrap-up round. (A wrap-up skill may be
+  marked `disable-model-invocation` - `/my-build-full` is - so it cannot be fired
+  through the skill tool. "Directly" then means reading its `SKILL.md` and working
+  its steps here, from Step 0 on; `go` is the invocation.)
+- I can name a different wrap-up option instead of `go`; honour that one.
+- Answers that DO spawn follow-ups void the offer. Keep grilling, and repeat the
+  offer on the new final round.
+- This is still me pulling the trigger - `go` IS the authorization, given in
+  advance and in writing. The standing never-auto-fire rule is unchanged, and the
+  wrap-up section below still applies whenever the offer was not made or not
+  taken.
+- On a small ticket this composes with Step 0.6 into: one consolidated round ->
+  my answers plus `go` -> the build fires. One reply, total.
 
 </what-to-do>
 
@@ -251,10 +314,16 @@ repo. Without one, the design doc's Decided block, or the single plan doc handed
 the build, is the home - same principle, no extra artifacts. Re-transcribing each
 ruling into several docs is how drift starts.
 
+The ledger carries the session's scope/risk statement and its `evidence` / `retro`
+picks from Step 0.6 alongside the design rulings - the wrap-up build reads them
+straight into its plan's **Scope & risk** section.
+
 When the grilling reaches shared understanding (no open branches left), restate the
 resolved decisions briefly so the alignment is explicit in the conversation, then
 stop and list the execution options the profile's **Wrap-up options** names.
 
 Do **not** launch any of them yourself - pulling the trigger is the user's call.
+The one path that fires directly is the `go` offer above, where the trigger was
+pulled in advance and in writing.
 
 </supporting-info>
