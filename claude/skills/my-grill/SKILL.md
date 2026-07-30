@@ -51,10 +51,11 @@ What the call drives:
   you check.
 - **Pin the two pipeline knobs** here too, as part of this session's decisions
   ledger, with one line of rationale each, so the wrap-up build inherits them:
-  - `evidence: full|light` - does the run publish a full evidence bundle, or ship
-    the one-line claims plus the local proof-artifact path on the PR? **FULL, no
-    exception, whenever anything player-visible moved** (user-visible, in a repo
-    that is not a game).
+  - `evidence: full|light` - does the run publish the curated evidence bundle,
+    or just the proof artifact rendered as-is? Both publish to the evidence
+    library and both PRs link the page; light skips only the curation. **FULL,
+    no exception, whenever anything player-visible moved** (user-visible, in a
+    repo that is not a game).
   - `retro: full|light` - light keeps the Done-when and proof-vs-diff checks;
     full adds the token & time audit and the review/scope-decision audit.
   Light is a claim that this run is small AND unsurprising. Proof itself never

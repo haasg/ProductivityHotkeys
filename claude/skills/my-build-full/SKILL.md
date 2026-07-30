@@ -1,6 +1,6 @@
 ---
 name: my-build-full
-description: Distill the current conversation's aligned plan into a lean executable doc, then run an autonomous Workflow - implement-and-self-prove -> plan-selected read-only reviewers (adversarial code / game-design), each returning a fix lane that lands in-run and escalated notes for the human -> a read-only retrospective that checks the build ran as the plan expected -> open a PR carrying per-review findings (numbered A1../D1../R1..) and, on a full retro, a token & time audit - using fresh-context subagents. The plan's Scope & risk call scales the ceremony to the task: evidence full (published bundle) or light (the claims plus the local proof-artifact path), retro full or light (Done-when + proof-vs-diff is the floor); proof itself never scales down. Ends with a post-PR triage step: the human picks which findings to address and a fresh subagent applies them on the same branch/PR. Repo-specific gates, proof surface, and publish mechanics come from the repo's skill profile. Stops and asks if a change is blocked or can't be proven without tooling that doesn't exist yet. Use after a grilling/planning session when you want to go from alignment to a reviewable PR without babysitting.
+description: Distill the current conversation's aligned plan into a lean executable doc, then run an autonomous Workflow - implement-and-self-prove -> plan-selected read-only reviewers (adversarial code / game-design), each returning a fix lane that lands in-run and escalated notes for the human -> a read-only retrospective that checks the build ran as the plan expected -> open a PR carrying per-review findings (numbered A1../D1../R1..) and, on a full retro, a token & time audit - using fresh-context subagents. The plan's Scope & risk call scales the ceremony to the task: evidence full (curated published bundle) or light (the proof artifact published as-is, linked from the PR), retro full or light (Done-when + proof-vs-diff is the floor); proof itself never scales down. Ends with a post-PR triage step: the human picks which findings to address and a fresh subagent applies them on the same branch/PR. Repo-specific gates, proof surface, and publish mechanics come from the repo's skill profile. Stops and asks if a change is blocked or can't be proven without tooling that doesn't exist yet. Use after a grilling/planning session when you want to go from alignment to a reviewable PR without babysitting.
 argument-hint: "<optional extra notes to pass through to the implementer>"
 disable-model-invocation: true
 ---
@@ -57,9 +57,10 @@ empty review of a sound change is a good and honest result.
 
 **Ceremony scales to the task, the same way review does.** The plan's **Scope &
 risk** section states the scope/risk call in one sentence and sets two knobs from
-it independently. **Light evidence** skips bundle assembly and publishing: the PR's
-Validation section carries the one-line claims plus the local proof-artifact path
-instead of a published URL. **Light retro** keeps Done-when conformance and
+it independently. **Light evidence** skips the curated bundle, never the publish:
+the proof artifact itself is published as a minimal page and the PR's Validation
+section links it - at either setting that section is one clickable link, never a
+copied claim list. **Light retro** keeps Done-when conformance and
 proof-vs-diff consistency and drops the token & time audit and the review-decision
 audit. Full/full is the default and the in-doubt answer; anything player-visible
 moved forces evidence FULL, and so does a selected design review (it judges the
@@ -210,8 +211,9 @@ section. When the conversation carries no assessment (a standalone build-full, o
 grill that never sized), make the call yourself from what the change touches. Two
 knobs, one line of rationale each:
 
-- `evidence: full|light` - full assembles and publishes the evidence bundle; light
-  ships the one-line claims plus the local proof-artifact path on the PR. **FULL
+- `evidence: full|light` - full assembles and publishes the curated evidence
+  bundle; light publishes the proof artifact as-is and the PR links that page.
+  Both publish, and both PR Validation sections are a single clickable link. **FULL
   whenever anything player-visible moved**, and full whenever a design review is
   selected - that reviewer's whole subject is the evidence. (The script forces
   that second case and reports the override loudly, but don't lean on the guard;
@@ -946,8 +948,9 @@ const CHECK_DECISIONS = `4. **Review- and scope-decision audit** (a paragraph, n
    review honest. If your verdict DISAGREES with the plan's pick, make that an explicit finding (the PR notes the
    disagreement on its Reviews line).
    Then judge the plan's **Scope & risk** picks the same way, on the same evidence: was \`evidence: light\` right for a
-   run that turned out player-visible or subtle (a light pick there means nothing was published for a human to look
-   at), and was \`retro: light\` right for a run whose diff or proof turned out to want the deeper read? A wrong pick
+   run that turned out player-visible or subtle (a light pick there means only the raw proof page was published, not
+   the curated claim-by-claim bundle a design read wants), and was \`retro: light\` right for a run whose diff or
+   proof turned out to want the deeper read? A wrong pick
    is a finding whose recommendation targets the sizing criteria - the grill's sizing step or Step 1's Scope & risk
    guidance - exactly like a wrong review pick.`
 
@@ -1048,19 +1051,19 @@ profile at ${PROFILE} for this repo's specifics - the architecture-section forma
 the evidence bundle location, and the publish command with its credential source and fallback. Read both first; the
 profile wins where they differ. The my-build-full-specific additions below are the Reviews line, the per-review
 findings sections${RETRO_DEPTH === 'light' ? '' : ', and the Token & time audit section'}.
-- The plan is at ${PLAN}. The implementer self-proof is at ${implProofPath} (in temp - read it for the body${EVIDENCE === 'full' ? ` and for
-  the evidence bundle` : ''}, do NOT copy it into the repo or commit it).
+- The plan is at ${PLAN}. The implementer self-proof is at ${implProofPath} (in temp - read it for the body and for
+  the published evidence page, do NOT copy it into the repo or commit it).
 - Branch \`build/${SLUG}\` per PR-FORMAT.md (append -2, -3, ... if taken).
 ${G.fmt ? `- Fmt before the commit: ${G.fmt}. If it reflows a file outside the logical diff, leave that file out of the commit.\n` : ''}${EVIDENCE === 'full' ? `- **Evidence bundle.** Assemble the bundle at the profile's bundle location per PR-FORMAT.md: an \`index.html\`
   telling the validation story claim by claim - the scenario run and the concrete observed results vs what the plan
   predicted, each screenshot/clip from the proof rendered IMMEDIATELY beside the one-line claim it proves (copied in
   from temp, renamed descriptively from its caption), primary behavior first, then each edge the proof reached. (No
-  media -> the page is the claim list alone.)` : `- **LIGHT evidence** - the plan's **Scope & risk** section picked \`evidence: light\`. Assemble NO bundle and publish
-  NOTHING; there is no evidence URL on this PR. The proof still exists in full (the implementer drove the scenario
-  live and captured it) - it just stays where it was written. The PR's Validation section carries it instead, per
-  PR-FORMAT.md's light variant: the one-line validation claims read out of the proof artifact (scenario run +
-  concrete observed result, primary behavior first, then each edge the proof reached), then one last line
-  \`Proof artifact: ${implProofPath}\`. Copy no media into the repo and commit none, exactly as on a full run.`}
+  media -> the page is the claim list alone.)` : `- **LIGHT evidence** - the plan's **Scope & risk** section picked \`evidence: light\`. Skip the curated bundle and
+  publish the proof artifact itself instead, per PR-FORMAT.md's light variant: at the profile's bundle location,
+  write an \`index.html\` that renders the proof artifact at ${implProofPath} AS-IS - its text unedited, each
+  screenshot/clip it names embedded by relative path beside its mention - and copy that media in. No re-authoring,
+  no renaming, no claim-by-claim curation: light trims packaging, never publishing. Copy no media into the repo and
+  commit none, exactly as on a full run.`}
 - Stage the source/doc changes with \`git add -A\` scoped to the change - never \`git add -u\`/\`commit -am\`, which
   drop untracked new files - and make ONE commit summarizing the change. Commit NO evidence media and no
   proof/retro \`.md\` artifact; if anything from temp ended up under the repo tree outside the profile's sanctioned
@@ -1071,25 +1074,26 @@ ${G.fmt ? `- Fmt before the commit: ${G.fmt}. If it reflows a file outside the l
   change and the incoming work - then run the full gate instead (${G.full}): the resolution is code no stage has
   tested. The profile's PR & publish section may additionally require re-running live validation - honor it. Merge
   brought in nothing -> nothing to do.
-- Open a ${draftReason ? `DRAFT PR (\`gh pr create --draft\`) - this run left something unresolved: ${draftReason}. Say that verbatim on the Reviews line (see below)` : 'ready-for-review PR'} against the default branch with \`gh\`. If gh is not authenticated, skip the PR${EVIDENCE === 'full' ? ` and the
-  publish` : ''}, leave the commit on the branch, and report "PR not opened: gh not authed".
-${EVIDENCE === 'full' ? `- **Publish the evidence** once the PR number exists, exactly per the profile's publish command and fallback. On
-  success, \`gh pr edit\` the review URL into the Validation section. If publishing fails, keep the PR, reference the
-  bundle's local path instead, and report the publish error - never block the PR on it.
-` : ''}${TICKET ? `- **Work-queue ticket.** This run ships ticket ${TICKET.id}. Once the PR is open${EVIDENCE === 'full' ? ' and the evidence link is in' : ''},
+- Open a ${draftReason ? `DRAFT PR (\`gh pr create --draft\`) - this run left something unresolved: ${draftReason}. Say that verbatim on the Reviews line (see below)` : 'ready-for-review PR'} against the default branch with \`gh\`. If gh is not authenticated, skip the PR and the
+  publish, leave the commit on the branch, and report "PR not opened: gh not authed".
+- **Publish the evidence** once the PR number exists, exactly per the profile's publish command and fallback -
+  every run publishes: the curated bundle on full, the proof page on light. On success, \`gh pr edit\` the review
+  URL into the Validation section. If publishing fails, keep the PR, reference the local path instead, and report
+  the publish error - never block the PR on it.
+${TICKET ? `- **Work-queue ticket.** This run ships ticket ${TICKET.id}. Once the PR is open and the evidence link is in,
   post the PR URL on the ticket (one line: the URL plus "PR opened by my-build-full"): ${TICKET.note}${draftReason ? `. The PR
   is a DRAFT, so do NOT close the ticket - it stays In Progress until that is resolved; the post-PR triage closes
   it` : `. Then close the ticket: ${TICKET.close}`}. If the PR was not opened (gh not authed), leave the ticket
   untouched. Either way, state the ticket's end state in your return value.
-` : ''}- **CI tail** (per PR-FORMAT.md): once the PR is open${EVIDENCE === 'full' ? ' and the evidence link is in' : ''}, run \`gh pr checks <number>\`. No
+` : ''}- **CI tail** (per PR-FORMAT.md): once the PR is open and the evidence link is in, run \`gh pr checks <number>\`. No
   checks reported -> the repo has no PR CI; move on. Otherwise wait for the checks to conclude (cap the wait at ~15
   minutes); on a failure make AT MOST ONE fix attempt (read the failing log, fix, commit, push, re-check once), then
   stop either way. Fold the final CI state into your return value ("CI green" / "CI red: <reason>" / "CI still
   running after 15m") - a persistently red PR is the human's call, never a reason to loop or close the PR.
 - PR body, assembled from the plan + the proof, per PR-FORMAT.md's baseline sections (Objective, Architecture changes
-  in the profile's format, Try it from the profile, ${EVIDENCE === 'full' ? `Validation as the evidence link ONLY - no claim-by-claim prose in
-  the PR; the claims live on the evidence page` : `Validation as PR-FORMAT.md's LIGHT variant - the one-line claims plus
-  the \`Proof artifact:\` path, no published link`}) plus these ${RETRO_DEPTH === 'light' ? 'two' : 'three'} my-build-full sections, in this order:
+  in the profile's format, Try it from the profile, ${EVIDENCE === 'full' ? `Validation as the \`[Validation evidence](<review URL>)\` link ONLY - no
+  claim-by-claim prose in the PR; the claims live on the evidence page` : `Validation as the \`[Proof artifact](<review URL>)\` link ONLY - no
+  claim-by-claim prose in the PR; the claims live on the published proof page, told once`}) plus these ${RETRO_DEPTH === 'light' ? 'two' : 'three'} my-build-full sections, in this order:
   - **Reviews** - one bare line naming which reviews ran: \`Reviews: ${reviewsLine}\`. Add reasoning ONLY if
     something is off - ${draftReason ? `and it is: append that this PR opened as a DRAFT because ${draftReason}` : 'a review stage died (the line above says so), or a Retro finding below says the plan\'s review decision was the wrong call - in which case add that one clause. Nothing off -> the bare line alone, no commentary'}.
   - **Review findings (triage before merge)** - paste the block below VERBATIM as the section's content. The \`A#\` /
@@ -1332,10 +1336,10 @@ diff into the main context.
    branch, honoring the plan's Constraints & decisions; run the check gate and
    iteration tests, plus the full gate once if the change is more than trivial;
    re-prove live any proof claim it touched and refresh the affected evidence; if
-   media changed, rebuild the evidence bundle and re-publish per the profile
-   (fresh immutable URL -> `gh pr edit` it in) - or, on a light-evidence run
-   (`evidence: 'light'`), refresh the proof artifact and the PR's claim list
-   instead, since there is no bundle to republish; push to the same branch; comment
+   the proof or its media changed, rebuild the published page and re-publish per
+   the profile (fresh immutable URL -> `gh pr edit` it in) - the curated bundle
+   on a full-evidence run, the as-is proof page on a light one
+   (`evidence: 'light'`); push to the same branch; comment
    on the PR naming which ids it addressed. Relay its report in a sentence or
    two. Repeat as the human asks for more rounds.
 4. **The Retro lane (`R#`) is a different kind of fix.** Those findings are edits

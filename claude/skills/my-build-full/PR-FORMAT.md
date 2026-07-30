@@ -11,9 +11,9 @@ this document and the profile differ, the profile wins.
 - Create a branch named `build/<slug>` from the current branch (the uncommitted
   changes carry over). If that name is taken, append `-2`, `-3`, ... until it's
   free.
-- Assemble the evidence bundle at the profile's bundle location (see "Evidence
-  bundle" below) - full-evidence runs only; a light-evidence run assembles no
-  bundle at all. Commit NOTHING from temp and no media - no screenshots, no
+- Assemble what gets published at the profile's bundle location (see "Evidence
+  bundle" below): the curated evidence bundle on a full-evidence run, the minimal
+  proof page on a light one. Commit NOTHING from temp and no media - no screenshots, no
   clips, no plan/proof/review/retro `.md` files; if one ended up under the repo
   outside the profile's sanctioned gitignored homes, remove it before committing.
 - Run the profile's fmt command first (if it names one) so the commit is
@@ -46,10 +46,11 @@ this document and the profile differ, the profile wins.
   authenticated: leave the commit on the branch and report "PR not opened: gh not
   authed" with the branch name (skip the publish too - there is no PR number to
   publish under).
-- After the PR exists, publish the evidence bundle and edit the review URL into
-  the body (see "Publish & link" below) - full-evidence runs only.
-- **CI tail.** Once the PR is open (and, on a full-evidence run, the evidence
-  link is in), run `gh pr checks <number>`. No checks reported -> the repo has no
+- After the PR exists, publish - the bundle on a full run, the proof page on a
+  light one - and edit the review URL into the body (see "Publish & link"
+  below). Every run publishes; only what gets published scales.
+- **CI tail.** Once the PR is open and the evidence link is in, run
+  `gh pr checks <number>`. No checks reported -> the repo has no
   PR CI; you're done. Otherwise wait for the checks to conclude (poll; cap the
   wait at ~15 minutes). On a failure, make AT MOST ONE fix attempt - read the
   failing log, fix, commit, push, re-check once - then stop either way and report
@@ -89,24 +90,32 @@ and, on a full retro, the Token & time audit.)
     bundle's local path if the publish failed). The claim-by-claim story lives on
     that page, told once, with each clip/screenshot rendered beside the claim it
     proves - do not restate it as prose here.
-  - **Light** - no bundle is assembled and nothing is published, so the claims
-    live in this section instead: the one-line validation claims read out of the
-    proof artifact (the scenario run and the concrete observed result vs what was
-    expected), primary behavior first, then each edge the proof reached - and then
-    one last line, `Proof artifact: <absolute path of the artifact in temp>`. The
-    media stays in that artifact's directory, unpublished.
+  - **Light** - the same shape, pointing at a humbler page: the section is
+    `[Proof artifact](<review URL>)` - the published proof page (the proof
+    artifact rendered as-is with its media; see "Evidence bundle" below). Same
+    placeholder-then-`gh pr edit` flow as full. Do NOT copy the validation
+    claims into the PR body - the claims are told once, in the proof artifact,
+    and a duplicated list drifts from its source and doubles the read. Only if
+    the publish itself failed does the section fall back to
+    `Proof artifact: <absolute local path>` beside the reported publish error.
 
-  Either way: embed no images in the PR body and commit none. Never write "tests
-  pass" or "gate clean" as the proof - a green gate is a baseline requirement, not
-  validation evidence. And light scales the *packaging*, never the *proving*: the
-  change was still driven live and captured per EVIDENCE.md before the PR stage
-  ever ran.
+  Either way: the section is one clickable link, no claim-by-claim prose; embed
+  no images in the PR body and commit none. Never write "tests pass" or "gate
+  clean" as the proof - a green gate is a baseline requirement, not validation
+  evidence. And light scales the *packaging*, never the *proving*: the change
+  was still driven live and captured per EVIDENCE.md before the PR stage ever
+  ran.
 
 ## Evidence bundle (load-bearing mechanics)
 
-This whole section, and "Publish & link" below it, applies to a **full**-evidence
-run. On a light-evidence run there is no bundle and no publish - the claims and the
-proof-artifact path go straight in the Validation section above.
+Both run kinds publish; what differs is curation. A **full**-evidence run
+assembles the curated bundle described below. A **light**-evidence run skips the
+curation and publishes the proof artifact itself as a minimal page: at the same
+profile bundle location, write an `index.html` that mechanically renders the
+proof artifact's content - its text as-is, unedited, with each screenshot/clip it
+names embedded by relative path beside its mention - and copy that media in. No
+re-authoring, no renaming, no claim-by-claim layout: light trims the curation,
+never the publish. The publish contract below binds both pages.
 
 The proof media ships as a self-contained bundle at the profile's bundle location,
 NOT as committed images:
@@ -143,6 +152,6 @@ login-protected), not from disk:
 - Every publish mints a fresh immutable URL; re-publish (and re-link) rather than
   expecting to update a published page.
 - **Fallback:** if the publish fails (missing env, network), keep the PR:
-  reference the bundle's local path in the Validation section and report the
-  publish error alongside the PR URL - the publish is never a reason to block or
-  close the PR.
+  reference the local path in the Validation section (the bundle's on full, the
+  proof artifact's on light) and report the publish error alongside the PR URL -
+  the publish is never a reason to block or close the PR.
