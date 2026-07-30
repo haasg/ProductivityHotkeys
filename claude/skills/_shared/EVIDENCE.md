@@ -71,6 +71,21 @@ typically suffice; name which paths ride the sample. A path with its own gate,
 cost, or effect wiring is not "identical" and owes its own evidence. An unshot
 path is an unreviewed path.
 
+## Lead the proof with an at-a-glance section
+
+The proof artifact opens with a short **At a glance** section, before any
+comprehensive detail, written so a non-expert can confirm the objective was
+accomplished without reading further: the problem or objective in plain language
+(one or two sentences), what it looked like before, and what it looks like now
+that it works - each state backed by the single most convincing screenshot or
+clip, referenced right beside it. A net-new behavior with no meaningful before
+state shows the new behavior working instead of a before/after pair. Its job is
+proof-in-one-screenful: a reader of a simple change should be able to stop there
+and move on. Be selective, not exhaustive - pick the one before/after pair (or
+the one clip) that shows it, and leave everything else to the comprehensive
+section. This fronts the conclusion; it trims nothing - every claim still gets
+its full treatment below.
+
 ## An "unreachable" visual is a claim to prove, not an excuse
 
 When some shipped visual state genuinely cannot be captured through the proof

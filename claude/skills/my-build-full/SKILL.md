@@ -669,8 +669,10 @@ Get to green in THIS context - implement, run, observe, fix, repeat. Do not hand
    stage-unique subdir of the OS temp dir: create \`build-${SLUG}-impl\` under \`$env:TEMP\` / \`%TEMP%\` and write
    everything there, copying your screenshots into it too (the evidence-hygiene rule in EVIDENCE.md is binding -
    never write into the repo tree except the profile's sanctioned gitignored homes, never use fixed shared-temp
-   names). List each screenshot's absolute path and a one-line caption of what it shows (these become the published
-   evidence page). Return the artifact path as proofPath.
+   names). OPEN the artifact with the At-a-glance section EVIDENCE.md requires - the problem in plain language,
+   before, and after, each beside its single most convincing capture - then the full detail below it. List each
+   screenshot's absolute path and a one-line caption of what it shows (these become the published evidence page).
+   Return the artifact path as proofPath.
 
 Leave ALL source changes UNCOMMITTED on the working tree - do not commit, push, or write a report into the repo.
 
@@ -780,8 +782,10 @@ ${READS}
    diff changed - a standard demo ride proves nothing about the paths the pieces moved unless it exercises them with
    NON-DEFAULT values.
 4. Write your proof (the exact scenario + concrete observed results for the whole feature) into your stage dir
-   \`build-${SLUG}-impl\` under \`$env:TEMP\` / \`%TEMP%\`, copying your screenshots in; list each screenshot's absolute path
-   and a one-line caption (these become the published evidence page). Return that path as proofPath.
+   \`build-${SLUG}-impl\` under \`$env:TEMP\` / \`%TEMP%\`, copying your screenshots in; OPEN it with the At-a-glance
+   section EVIDENCE.md requires (problem in plain language, before, after - each beside its single most convincing
+   capture), then the full detail; list each screenshot's absolute path and a one-line caption (these become the
+   published evidence page). Return that path as proofPath.
 
 Leave ALL changes UNCOMMITTED - do not commit, push, or write a report into the repo.
 
@@ -902,7 +906,8 @@ Then re-prove the tree:
    clips (a refreshed clip still owes EVIDENCE.md's full-scenario, 5-second-floor rule).
 4. Append a "Fix addendum" to the proof artifact at ${implProofPath}: every item, what you did with it (landed /
    dismissed / demoted, with the reason), and the concrete re-checked result - including any refreshed capture paths
-   with one-line captions.
+   with one-line captions. If a refreshed capture replaces one the proof's At-a-glance section leads with, update
+   that reference in place - the top section must keep showing the current behavior.
 
 Leave ALL changes UNCOMMITTED - do not commit, push, or write anything into the repo.
 
@@ -1055,9 +1060,11 @@ findings sections${RETRO_DEPTH === 'light' ? '' : ', and the Token & time audit 
   the published evidence page, do NOT copy it into the repo or commit it).
 - Branch \`build/${SLUG}\` per PR-FORMAT.md (append -2, -3, ... if taken).
 ${G.fmt ? `- Fmt before the commit: ${G.fmt}. If it reflows a file outside the logical diff, leave that file out of the commit.\n` : ''}${EVIDENCE === 'full' ? `- **Evidence bundle.** Assemble the bundle at the profile's bundle location per PR-FORMAT.md: an \`index.html\`
-  telling the validation story claim by claim - the scenario run and the concrete observed results vs what the plan
-  predicted, each screenshot/clip from the proof rendered IMMEDIATELY beside the one-line claim it proves (copied in
-  from temp, renamed descriptively from its caption), primary behavior first, then each edge the proof reached. (No
+  that OPENS with the proof's At-a-glance section (the problem in plain language, before, after, each beside its
+  single most convincing capture - proof-in-one-screenful for an average reader), then tells the validation story
+  claim by claim - the scenario run and the concrete observed results vs what the plan predicted, each
+  screenshot/clip from the proof rendered IMMEDIATELY beside the one-line claim it proves (copied in from temp,
+  renamed descriptively from its caption), primary behavior first, then each edge the proof reached. (No
   media -> the page is the claim list alone.)` : `- **LIGHT evidence** - the plan's **Scope & risk** section picked \`evidence: light\`. Skip the curated bundle and
   publish the proof artifact itself instead, per PR-FORMAT.md's light variant: at the profile's bundle location,
   write an \`index.html\` that renders the proof artifact at ${implProofPath} AS-IS - its text unedited, each

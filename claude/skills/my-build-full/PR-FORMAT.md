@@ -115,7 +115,10 @@ profile bundle location, write an `index.html` that mechanically renders the
 proof artifact's content - its text as-is, unedited, with each screenshot/clip it
 names embedded by relative path beside its mention - and copy that media in. No
 re-authoring, no renaming, no claim-by-claim layout: light trims the curation,
-never the publish. The publish contract below binds both pages.
+never the publish. The light page stays skimmable without curation because the
+proof artifact itself leads with its At-a-glance section (EVIDENCE.md requires
+it) - the as-is render carries it to the top of the page for free. The publish
+contract below binds both pages.
 
 The proof media ships as a self-contained bundle at the profile's bundle location,
 NOT as committed images:
@@ -126,12 +129,19 @@ NOT as committed images:
   descriptively from what each shows (e.g. `knight-runs-east.gif`,
   `after-newgame.png`). Media paths in the HTML are relative (the bundle must
   survive being moved or zipped); no base64 embedding for large media.
-- **The page tells the validation story** claim-by-claim - it is the only place
-  that story is told, since the PR's Validation section is just the link: each
-  claim as a line of text (the scenario run, the concrete observed results vs what
-  was expected) with its clip/screenshot rendered immediately beside it. A reviewer
-  opens one page and sees every claim against its evidence. Lead with the motion
-  clip for anything that moves; for an asset swap, lead with the before/after.
+- **The page opens with the proof's At-a-glance section** (EVIDENCE.md requires
+  the proof artifact to lead with one): the problem in plain language, before,
+  and after, each beside its single most convincing capture - so an average
+  reader can confirm the objective was accomplished in one screenful and, for a
+  simple fix, stop there. Carry it over at the top of the page; do not dilute it
+  with detail that belongs below.
+- **The page then tells the validation story** claim-by-claim - it is the only
+  place that story is told, since the PR's Validation section is just the link:
+  each claim as a line of text (the scenario run, the concrete observed results
+  vs what was expected) with its clip/screenshot rendered immediately beside it.
+  A reviewer opens one page and sees every claim against its evidence. Lead with
+  the motion clip for anything that moves; for an asset swap, lead with the
+  before/after.
 - **Publish rules.** The bundle is what gets published, so it must satisfy the
   publish contract the profile points at: `index.html` at the bundle root, all
   media referenced by relative path, fully self-contained (no CDN/external
