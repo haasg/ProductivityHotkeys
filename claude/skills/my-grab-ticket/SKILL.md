@@ -79,8 +79,21 @@ Then, using the queue CLI the profile names:
 
    Grabbing the same ticket again later just adds another note; the newest one
    names the session that currently holds it.
-4. **Report.** One line to the user: ticket ID, title, and URL, now In Progress,
-   plus whether the session stamp landed.
+4. **Report.** Lead with a session-name block, then the status line:
+
+   - **Session name to copy.** The desktop app names every grab-ticket session
+     after this skill, so sessions are indistinguishable until renamed by hand.
+     There is no tool that can rename the *current* session, so hand the user
+     the name instead: print a fenced code block (code blocks get a copy button
+     in the app) containing exactly one line - a compressed version of the
+     ticket's title, eight words maximum, no ticket ID and no trailing
+     punctuation, e.g. `herdr pane hotkeys`. Compress by dropping filler
+     words, never by abbreviating domain terms into something unrecognisable.
+   - **Ticket link.** Directly under the block, the ticket URL as a markdown
+     link labelled with the ID and full title, so the ticket opens in the
+     browser with one click.
+   - **Status.** One line: ticket now In Progress, plus whether the session
+     stamp landed.
 5. **Grill it.** Invoke the `my-grill` skill with the ticket as its topic - pass
    the ID, title, and the full description text as the argument so the grill
    starts with a real topic, never an unfilled placeholder. Append the picker's
