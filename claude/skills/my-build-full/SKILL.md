@@ -1,6 +1,6 @@
 ---
 name: my-build-full
-description: Distill the current conversation's aligned plan into a lean executable doc, then run an autonomous Workflow - implement-and-self-prove -> plan-selected read-only reviewers (adversarial code / game-design), each returning a fix lane that lands in-run and escalated notes for the human -> a read-only retrospective that checks the build ran as the plan expected -> open a PR carrying per-review findings (numbered A1../D1../R1..) and, on a full retro, a token & time audit - using fresh-context subagents. The plan's Scope & risk call scales the ceremony to the task: evidence full (curated published bundle) or light (the proof artifact published as-is, linked from the PR), retro full or light (Done-when + proof-vs-diff is the floor); proof itself never scales down. Ends with a post-PR triage step: the human picks which findings to address and a fresh subagent applies them on the same branch/PR. Repo-specific gates, proof surface, and publish mechanics come from the repo's skill profile. Stops and asks if a change is blocked or can't be proven without tooling that doesn't exist yet. Use after a grilling/planning session when you want to go from alignment to a reviewable PR without babysitting.
+description: Distill the current conversation's aligned plan into a lean executable doc, then run an autonomous pipeline of fresh-context subagents - implement and self-prove, plan-selected read-only reviewers with an in-run fix lane, a retrospective, and a PR carrying numbered findings (A1../D1../R1..) for post-PR triage. The plan's Scope & risk call scales the ceremony; the proof never scales down. Use after a grilling/planning session to go from alignment to a reviewable PR without babysitting.
 argument-hint: "<optional extra notes to pass through to the implementer>"
 disable-model-invocation: true
 ---
@@ -41,75 +41,20 @@ implement can also exit early, no PR:
    +- cant_prove  (proving it needs tooling that doesn't exist yet) ---------------------> stop + ask
 ```
 
-The implementer **proves its own work** - it doesn't just pass the check gate, it
-runs the plan's validation scenario on the repo's proof surface and records the
-evidence for the **primary behavior and the plan's listed edge cases**. (In a
-decomposed run - Step 2b - the "implementer" is several piece agents, and the
-proving falls to a final integrate-and-prove stage on the accumulated tree.)
+**Review and ceremony are earned per task, never flat-rate.** An always-on
+adversarial audit was removed 2026-07-05 (across 31 runs it cost ~29% of a run's
+output tokens to catch one real defect) - that data point is the guardrail this
+design answers: Step 1 decides per task which reviewers ride along and how much
+ceremony the run gets. What never scales down is the **proof**: the implementer
+drives the plan's validation scenario live and captures the evidence EVIDENCE.md
+demands on every run, at every size.
 
-**Review is conditional, never flat-rate.** An always-on adversarial audit was
-removed 2026-07-05 (across 31 runs it cost ~29% of a run's output tokens to catch
-one real defect) - that data point is the guardrail this design answers. Step 1
-decides per task which reviewers, if any, earn their seat. Reviewers read
-artifacts (the plan, the diff, the proof evidence) instead of re-driving the game,
-must tie every claimed defect to a concrete failure scenario, and are told an
-empty review of a sound change is a good and honest result.
-
-**Ceremony scales to the task, the same way review does.** The plan's **Scope &
-risk** section states the scope/risk call in one sentence and sets two knobs from
-it independently. **Light evidence** skips the curated bundle, never the publish:
-the proof artifact itself is published as a minimal page and the PR's Validation
-section links it - at either setting that section is one clickable link, never a
-copied claim list. **Light retro** keeps Done-when conformance and
-proof-vs-diff consistency and drops the token & time audit and the review-decision
-audit. Full/full is the default and the in-doubt answer; anything player-visible
-moved forces evidence FULL, and so does a selected design review (it judges the
-bundle). What never scales down is the **proof**: the implementer drives the
-scenario live and captures the screenshots and clips EVIDENCE.md demands on every
-run, at every size. Light trims what gets ceremonially packaged, never what gets
-verified.
-
-**Both reviewers sort what they find into two lanes: `fix` and `notes` - and they
-fix by default.** A finding lands in-run, inside the PR, unless it genuinely needs
-a human: it picks among real alternatives, moves the plan's constraints or a public
-surface, is too big or risky for one fix pass, or the reviewer isn't confident it's
-even an improvement. The fix lane demands **exactness** - the reviewer states the
-precise change, because the fix stage executes instructions and never interprets
-directions. Everything escalated rides to the PR as that lane's numbered findings
-(`A1..` adversarial, `D1..` design, `R1..` retro) for the human to triage after the
-PR opens - addressed on the same branch/PR, never a follow-up PR. Escalation is
-held to an **impact bar**: surface a finding only when its impact justifies a
-human's review time; few or none is a good honest result.
-
-The **Retro** phase reads the run rather than writing the feature - on a run with
-no reviewers it is the only second pair of eyes before the human. A fresh
-read-only agent takes the plan, the implementer's outcome + proof artifact, the
-reviewers' findings (when they ran), and the shipping diff, and **checks the
-build proceeded as the plan expected**: every Done-when bullet has matching code
-in the diff and evidence in the proof, the proof's claims are consistent with the
-diff, the validation actually exercised the paths the diff moved, and the plan
-itself held up. That much is the **floor** - it runs at both depths. A **full**
-retro adds two lanes on top: it audits the run's **efficiency** from the stage
-transcripts on disk, and - the meta-review lane - judges whether Step 1's
-**review decision** and the plan's **Scope & risk** picks were right for what
-actually shipped. Each finding carries a **concrete recommendation**. The findings
-land in the PR as its own **Retro** section (`R1..`), with the per-stage **token &
-time audit** table beside it on a full retro, as leads for you to investigate
-separately. It is **advisory and read-only** - it never blocks the PR and never
-changes code - and it never disappears: light is the floor, not off.
-
-You fire one command and walk away; you come back to a PR - with per-review
-findings to triage, and the token & time audit attached on a full retro - or to a
-clear report (blocked, or it can't be proven without new tooling you should decide
-on). The PR is not the finish line: the norm is the **post-PR triage step** (see
-After the pipeline) where the human picks which escalated findings to address, a
-fresh subagent applies them on the same branch/PR, and only then it merges -
-slam-merging a clean run is the exception, not the habit. Every stage is a
-**fresh-context subagent seeded only by the plan doc + the working-tree diff + the
-implementer's proof** - never the grilling transcript, and never a resumed agent.
-The implementer's work persists on the working tree, so each later stage just
-reads the diff off disk - and the post-PR follow-up stays on subagents too, so the
-firing session's context never absorbs the diff or the findings artifacts.
+Every stage is a **fresh-context subagent seeded only by the plan doc + the
+working-tree diff + the implementer's proof** - never the grilling transcript, and
+never a resumed agent. The work persists uncommitted on the working tree, so each
+later stage reads the diff off disk - and post-PR follow-ups stay on subagents
+too, so the firing session's context never absorbs the diff or the findings
+artifacts.
 
 ## Step 0 - Load the repo profile (gate)
 
@@ -181,12 +126,10 @@ require a grill to have run; it distills whatever alignment exists in the curren
 conversation. If the conversation has little concrete alignment (especially no
 validation strategy - see Step 1), say so plainly but still proceed if asked.
 
-The pipeline ships the implementer's diff hardened by exactly the fix items the
-reviewers listed - it does **not** sweep the change for simplification. Reviewers
-are not style hunters: they land a clearly-agreeable naming or simplification item
-noticed *in passing*, but they hunt defects and judge design intent. To sweep the
-diff deliberately, run `/simplify` or `/code-review` by hand on the branch after
-the PR opens.
+The pipeline does **not** sweep the change for style or simplification -
+reviewers land only in-passing, clearly-agreeable cleanups. To sweep the diff
+deliberately, run `/simplify` or `/code-review` by hand on the branch after the
+PR opens.
 
 ## Step 1 - Write the plan doc
 
@@ -274,10 +217,6 @@ this closed menu - never invent other reviewer types:
   be written. Skip it when nothing a player experiences changes.
 - **Neither** - the default for mechanical/content-only changes (asset swaps,
   renames, config, doc moves): the retro alone is the second read.
-
-Both reviewers carry the same two lanes: an exactly-stated `fix` item lands in-run
-before the PR, and only a finding that genuinely needs a human's call escalates to
-that lane's PR findings (see the fix-by-default rule above).
 
 The profile's **Build pipeline** section may carry a review note (e.g. "most
 changes here are player-facing - lean design-reviewer-in"); honor it. Write the
@@ -409,35 +348,22 @@ args: {
 }
 ```
 
-Omit `ticket` entirely when the conversation claimed no work-queue ticket (see
-Step 1's ticket linkage).
-
-`reviews` carries Step 1's review decision verbatim - both false (or the key
-omitted) means no Review phase, which is the correct call for mechanical work,
-not a degraded run.
-
-`evidence` and `retro` carry the plan's **Scope & risk** picks; the script defaults
-each to `'full'` when the key is absent or anything other than `'light'`. One
-script-level guard: when `reviews.design` is true, evidence is forced to FULL
-regardless of the arg - the design reviewer judges the evidence bundle, so there
-has to be one. The override is reported in the retro's trajectory and in the run's
-return value (`evidenceForced`) so it can never pass silently.
-
-For a decomposed build (Step 1's decomposition decision) additionally pass
-`pieces`; see Step 2b. Same script.
+`reviews`, `evidence`, and `retro` carry Step 1's decisions verbatim (absent or
+invalid keys default to no reviewers / full / full). When `reviews.design` is true
+the script forces evidence FULL - the design reviewer judges the evidence bundle,
+so there has to be one - and reports the override (`evidenceForced`) so it never
+passes silently. For a decomposed build additionally pass `pieces`; see Step 2b.
+Same script.
 
 **The pipeline runs on Opus by default, regardless of the firing session's
-model.** The script defaults its subagents' model to `opus`, so a grill run on an
-expensive model (e.g. Fable) does not silently carry that cost into the
-token-heavy implement stage. Leave `model` out of `args` for the Opus default;
-pass `model: "<alias>"` **only** when the user has explicitly named a build model
-for this run.
+model** - a grill run on an expensive model must not silently carry that cost into
+the token-heavy implement stage. Pass `model: "<alias>"` **only** when the user
+has explicitly named a build model for this run.
 
-**Pass `args` as an actual JSON object, not a stringified one.** If it arrives as
-a string, `args.planPath` is `undefined` and the implementer is told to "implement
-the plan at undefined" - it will (correctly) refuse. The script normalizes a
-stringified `args` and hard-fails if `planPath` or the gates are missing, so a
-delivery failure stops loud instead of self-healing into the wrong change.
+**Pass `args` as an actual JSON object, not a stringified one.** The script
+normalizes a stringified delivery and hard-fails if `planPath` or the gates are
+missing, so a delivery failure stops loud instead of self-healing into the wrong
+change.
 
 ```javascript
 export const meta = {
@@ -857,10 +783,9 @@ Judge what the evidence shows against the Design intent, as a designer would: do
 (scale, contrast, visual hierarchy)? does the behavior make sense for the player (pacing, feedback, fairness,
 affordance)? does anything contradict the game's documented design language? does an edge case produce something
 technically correct but wrong as gameplay? Evidence too thin to judge is itself a finding - "no capture shows X, so
-the intent cannot be checked" doubles as a proof gap; say it plainly. **Clip duration is part of that check**:
-EVIDENCE.md requires a clip to cover the full scenario (steady lead-in, the behavior, the settled end state) at
-real-time speed with a 5-second minimum - a clip under that floor, or one too short for you to judge the motion it
-exists to show, is a finding in its own right; say which clip and how long it actually is.
+the intent cannot be checked" doubles as a proof gap; say it plainly. **Clip duration is part of that check**: a clip
+violating EVIDENCE.md's full-scenario, 5-second-floor rule, or too short for you to judge the motion it exists to
+show, is a finding in its own right; say which clip and how long it actually is.
 
 ${LANES}
 Lane specifics for this review: a \`fix\` item of kind **violation** also needs \`evidence\` - the concrete pointer
@@ -998,10 +923,9 @@ Two checks are` : `Four checks are`} load-bearing - do them concretely, bullet b
    output rather than derived from the objective, a scenario that never exercises the paths the diff actually moved,
    an observable behavior left to a unit test that a live scenario could have reached, an interactive surface whose
    human-input-path obligation (EVIDENCE.md's (a)-or-(b)) was never addressed. The implementer graded its own work -
-   you are the skeptical reader. **Check the clips as artifacts, not just as claims**: EVIDENCE.md requires a
-   recording to cover the full scenario (steady lead-in, the behavior, the settled end state) at real-time speed with
-   a 5-second minimum floor - read each clip's actual duration off disk (e.g. \`ffprobe\`), and flag any clip under
-   the floor or too short to judge the motion it exists to show as a finding, naming the file and its real duration.
+   you are the skeptical reader. **Check the clips as artifacts, not just as claims**: read each clip's actual
+   duration off disk (e.g. \`ffprobe\`) and flag any violating EVIDENCE.md's full-scenario, 5-second-floor rule as a
+   finding, naming the file and its real duration.
 ${RETRO_DEPTH === 'light' ? '\n' : `${CHECK_EFFICIENCY}\n${CHECK_DECISIONS}\n\n`}Beyond those, follow whatever actually looks off in THIS run - a plan hole (an ambiguity the implementer had to guess
 through, a constraint the diff quietly contradicts, an Out-of-scope line it crossed), a step that cost tokens without
 changing the outcome, a prompt or structural choice in the skill or the profile that steered the agent wrong.
@@ -1051,56 +975,24 @@ const renderSection = (id, title, fixedLine, findings) => {
 const deadSection = (title) => `### ${title}\n\n_The stage died with no result - nothing was reviewed on this lane._`
 
 const prPrompt = (implProofPath, reviewsLine, findingsBlock, auditTable, auditNote, draftReason) => `Open a PR for the change on the current working tree.
-Follow ${SKILLDIR}/PR-FORMAT.md for the branch/commit/PR-body conventions, AND the "PR & publish" section of the repo
-profile at ${PROFILE} for this repo's specifics - the architecture-section format and vocabulary, the Try-it command,
-the evidence bundle location, and the publish command with its credential source and fallback. Read both first; the
-profile wins where they differ. The my-build-full-specific additions below are the Reviews line, the per-review
-findings sections${RETRO_DEPTH === 'light' ? '' : ', and the Token & time audit section'}.
+Follow ${SKILLDIR}/PR-FORMAT.md for ALL mechanics - branch, commit, sync, publish, CI tail, and the PR body's
+baseline sections - AND the "PR & publish" section of the repo profile at ${PROFILE} for this repo's specifics. Read
+both first; the profile wins where they differ. This prompt adds only this run's data and the my-build-full body
+sections below.
 - The plan is at ${PLAN}. The implementer self-proof is at ${implProofPath} (in temp - read it for the body and for
   the published evidence page, do NOT copy it into the repo or commit it).
-- Branch \`build/${SLUG}\` per PR-FORMAT.md (append -2, -3, ... if taken).
-${G.fmt ? `- Fmt before the commit: ${G.fmt}. If it reflows a file outside the logical diff, leave that file out of the commit.\n` : ''}${EVIDENCE === 'full' ? `- **Evidence bundle.** Assemble the bundle at the profile's bundle location per PR-FORMAT.md: an \`index.html\`
-  that OPENS with the proof's At-a-glance section (the problem in plain language, before, after, each beside its
-  single most convincing capture - proof-in-one-screenful for an average reader), then tells the validation story
-  claim by claim - the scenario run and the concrete observed results vs what the plan predicted, each
-  screenshot/clip from the proof rendered IMMEDIATELY beside the one-line claim it proves (copied in from temp,
-  renamed descriptively from its caption), primary behavior first, then each edge the proof reached. (No
-  media -> the page is the claim list alone.)` : `- **LIGHT evidence** - the plan's **Scope & risk** section picked \`evidence: light\`. Skip the curated bundle and
-  publish the proof artifact itself instead, per PR-FORMAT.md's light variant: at the profile's bundle location,
-  write an \`index.html\` that renders the proof artifact at ${implProofPath} AS-IS - its text unedited, each
-  screenshot/clip it names embedded by relative path beside its mention - and copy that media in. No re-authoring,
-  no renaming, no claim-by-claim curation: light trims packaging, never publishing. Copy no media into the repo and
-  commit none, exactly as on a full run.`}
-- Stage the source/doc changes with \`git add -A\` scoped to the change - never \`git add -u\`/\`commit -am\`, which
-  drop untracked new files - and make ONE commit summarizing the change. Commit NO evidence media and no
-  proof/retro \`.md\` artifact; if anything from temp ended up under the repo tree outside the profile's sanctioned
-  gitignored homes, it's a mistake; remove it before committing.
-- **Sync with the default branch before opening** (per PR-FORMAT.md). If the merge brought in ANY commits - conflicts
-  or not - re-run the check gate (${G.check}) plus the touched units' tests: the proof ran against the pre-merge
-  tree, and a semantic conflict is invisible to git. If it had textual conflicts, resolve them - preserve both this
-  change and the incoming work - then run the full gate instead (${G.full}): the resolution is code no stage has
-  tested. The profile's PR & publish section may additionally require re-running live validation - honor it. Merge
-  brought in nothing -> nothing to do.
-- Open a ${draftReason ? `DRAFT PR (\`gh pr create --draft\`) - this run left something unresolved: ${draftReason}. Say that verbatim on the Reviews line (see below)` : 'ready-for-review PR'} against the default branch with \`gh\`. If gh is not authenticated, skip the PR and the
-  publish, leave the commit on the branch, and report "PR not opened: gh not authed".
-- **Publish the evidence** once the PR number exists, exactly per the profile's publish command and fallback -
-  every run publishes: the curated bundle on full, the proof page on light. On success, \`gh pr edit\` the review
-  URL into the Validation section. If publishing fails, keep the PR, reference the local path instead, and report
-  the publish error - never block the PR on it.
+- Branch \`build/${SLUG}\`.
+- The profile's gates, verbatim, for PR-FORMAT.md's sync re-checks: check gate ${G.check}; full gate ${G.full}.
+${G.fmt ? `- The profile's fmt command: ${G.fmt}.\n` : ''}- **Evidence: ${EVIDENCE}** (the plan's **Scope & risk** pick). Assemble and publish per PR-FORMAT.md's "Evidence
+  bundle" and "Publish & link" sections - ${EVIDENCE === 'full' ? 'the curated claim-by-claim bundle' : `the proof artifact at ${implProofPath} rendered as-is`} - and write the
+  Validation section as PR-FORMAT.md's ${EVIDENCE === 'full' ? 'full' : 'light'} variant.
+- Open a ${draftReason ? `DRAFT PR (\`gh pr create --draft\`) - this run left something unresolved: ${draftReason}. Say that verbatim on the Reviews line (see below)` : 'ready-for-review PR'}.
 ${TICKET ? `- **Work-queue ticket.** This run ships ticket ${TICKET.id}. Once the PR is open and the evidence link is in,
   post the PR URL on the ticket (one line: the URL plus "PR opened by my-build-full"): ${TICKET.note}${draftReason ? `. The PR
   is a DRAFT, so do NOT close the ticket - it stays In Progress until that is resolved; the post-PR triage closes
   it` : `. Then close the ticket: ${TICKET.close}`}. If the PR was not opened (gh not authed), leave the ticket
   untouched. Either way, state the ticket's end state in your return value.
-` : ''}- **CI tail** (per PR-FORMAT.md): once the PR is open and the evidence link is in, run \`gh pr checks <number>\`. No
-  checks reported -> the repo has no PR CI; move on. Otherwise wait for the checks to conclude (cap the wait at ~15
-  minutes); on a failure make AT MOST ONE fix attempt (read the failing log, fix, commit, push, re-check once), then
-  stop either way. Fold the final CI state into your return value ("CI green" / "CI red: <reason>" / "CI still
-  running after 15m") - a persistently red PR is the human's call, never a reason to loop or close the PR.
-- PR body, assembled from the plan + the proof, per PR-FORMAT.md's baseline sections (Objective, Architecture changes
-  in the profile's format, Try it from the profile, ${EVIDENCE === 'full' ? `Validation as the \`[Validation evidence](<review URL>)\` link ONLY - no
-  claim-by-claim prose in the PR; the claims live on the evidence page` : `Validation as the \`[Proof artifact](<review URL>)\` link ONLY - no
-  claim-by-claim prose in the PR; the claims live on the published proof page, told once`}) plus these ${RETRO_DEPTH === 'light' ? 'two' : 'three'} my-build-full sections, in this order:
+` : ''}- PR body: PR-FORMAT.md's baseline sections, plus these ${RETRO_DEPTH === 'light' ? 'two' : 'three'} my-build-full sections, in this order:
   - **Reviews** - one bare line naming which reviews ran: \`Reviews: ${reviewsLine}\`. Add reasoning ONLY if
     something is off - ${draftReason ? `and it is: append that this PR opened as a DRAFT because ${draftReason}` : 'a review stage died (the line above says so), or a Retro finding below says the plan\'s review decision was the wrong call - in which case add that one clause. Nothing off -> the bare line alone, no commentary'}.
   - **Review findings (triage before merge)** - paste the block below VERBATIM as the section's content. The \`A#\` /
@@ -1152,8 +1044,7 @@ if (!impl) return { status: 'blocked', blocker: 'implement stage returned no res
 if (impl.outcome === 'blocked') return { status: 'blocked', blocker: impl.blocker, summary: impl.summary }
 if (impl.outcome === 'cant_prove') return { status: 'cant_prove', missingTooling: impl.missingTooling, summary: impl.summary }
 
-// Review is conditional per Step 1's review decision - the always-on audit it replaces was removed 2026-07-05
-// (31 runs, one real catch, ~29% of a run's output tokens). Reviewers are read-only and artifact-based; EITHER one's
+// Review is conditional per Step 1's review decision. Reviewers are read-only and artifact-based; EITHER one's
 // fix lane spins up the fix stage. A dead review or a failed fix never kills the run - it downgrades the PR to a
 // draft, so the work and the evidence still reach the human.
 let adv = null, design = null, fix = null, draftReason = ''
@@ -1242,48 +1133,29 @@ return {
 
 ## Step 2b - Decomposed build (pieces)
 
-Reach here from Step 1's **Decomposition decision**: the work has genuine seams
-(per the seam test), or it won't fit one implement-context but folds into
-independently-green pieces. Decomposition is a deliberate planning-time call
-written into the plan doc - it needs no separate user authorization; the seam test
-and the **hard cap of 10 pieces** (the script throws above it) are the guardrails.
-It is the *same* Step 2 Workflow, driven by data. Decomposing the *build* is still
-**one** PR - never slicing the deliverable.
+Reach here from Step 1's **Decomposition decision**. Same Step 2 script, driven by
+data; the seam test and the 10-piece cap are the guardrails, and no separate user
+authorization is needed. **Size each piece to one impl agent's context - not to
+the cap**: more, smaller pieces beat a handful of overstuffed ones that run out of
+room and come back `blocked`.
 
-**Size each piece to one impl agent's context - not to the cap.** That is why the
-cap sits at 10: a large objective is better served by more, smaller pieces, each
-comfortably inside one fresh context, than by a handful of overstuffed ones that
-run out of room and come back `blocked`. The cap only marks where an objective
-stopped fitting one PR at all; the seam test still decides which splits are legal,
-so a high cap never licenses splitting work that has no seam.
-
-- **Plan doc**: fill in the **Pieces** section (format in Step 1's section list):
-  one line per piece with what it owns and its `needs:` edges.
+- **Plan doc**: fill in the **Pieces** section (format in Step 1's section list).
 - **Derive `args.pieces` from the edges**: pieces with no `needs` (and at least
   one sibling like them) -> the `parallel` array; everything else -> `sequential`,
   in dependency order. **Only the first wave parallelizes** - a parallel worktree
   is cut from committed HEAD, so a piece that `needs` another can never run in one
   (it would not see the uncommitted work). If the natural graph has a second
   independent wave, fold it: independent work first, wiring after, or make it
-  sequential. A lone dependency-free piece is just the first sequential piece (the
-  script normalizes this).
-- **Call the same Step 2 script** with the pieces added to `args`.
-- **Mechanics**: parallel pieces run concurrently, each in an isolated git
-  worktree; a merge step applies each worktree's diff onto the primary tree
-  (disjoint footprints make conflicts rare - mostly manifest/lockfiles) and
-  removes the merged worktrees; sequential pieces then accumulate UNCOMMITTED on
-  the one tree, additive-default so it always passes the check gate; a final
-  **integrate-and-prove** stage runs the single full gate plus the plan's live
-  Validation plan and writes the proof artifact. **Retro and PR are identical** to
-  a single-pass run - the retro reads the whole accumulated diff.
-- **Per-piece gate**: exactly the profile's per-piece gate, verbatim - a narrowed
-  shortcut once let a real multi-process defect ride latent through three passes.
-  No live validation per piece: a piece without its wiring is usually unreachable
-  live, and proof-surface startup per piece isn't worth it.
-- **Parallelism buys wall-clock only when the per-worktree setup cost is small
-  relative to the piece.** Token cost is unchanged, each worktree pays any cold
-  build the profile's decomposition note warns about, and the merge step adds a
-  little on top. Parallelize only substantial pieces.
+  sequential.
+- **Mechanics** are in the script (see its decomposed-build comment): parallel
+  worktrees -> merge -> sequential pieces accumulate uncommitted -> one
+  integrate-and-prove stage runs the single full gate plus the plan's live
+  Validation plan and writes the proof artifact. Pieces run only the per-piece
+  gate - no live validation per piece (a piece without its wiring is usually
+  unreachable live). **Retro and PR are identical** to a single-pass run.
+- **Parallelism buys wall-clock only**: token cost is unchanged, each worktree
+  pays any cold build the profile's decomposition note warns about, and the merge
+  step adds a little on top. Parallelize only substantial pieces.
 - **Failure**: any piece returning `blocked` / `cant_prove` stops the run and
   reports which piece. A failed parallel wave leaves the worktrees in place (paths
   in the report) for inspection; prior sequential work stays uncommitted on the
