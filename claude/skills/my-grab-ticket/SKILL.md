@@ -79,7 +79,16 @@ Then, using the queue CLI the profile names:
 
    Grabbing the same ticket again later just adds another note; the newest one
    names the session that currently holds it.
-4. **Report.** Lead with a session-name block, then the status line:
+4. **Compose the report - but never emit it mid-turn.** Text written between
+   tool calls does not reach the desktop transcript; a report printed here and
+   followed by the grill invocation is silently swallowed (2026-07-30: the
+   session-name block never showed up). Only a turn's FINAL message - no tool
+   calls after it - reliably renders. So compose the report now and carry it:
+   the first message that ends a turn MUST open with it, before any other
+   content. On the normal path that is the grill's opening round (step 5); on
+   any path that stops short (no-survivor report, empty session ID, failed
+   claim), the stopping message itself is final, so lead with whatever parts of
+   the report exist. The report, in order:
 
    - **Session name to copy.** The desktop app names every grab-ticket session
      after this skill, so sessions are indistinguishable until renamed by hand.
@@ -102,6 +111,10 @@ Then, using the queue CLI the profile names:
    binding - confirm or override): small - one prompt file; risk: ...`. The
    picker read only the ticket; the grill reads the code, so the grill's call
    wins.
+
+   The grill's opening round is normally this turn's final message - open it
+   with the step-4 report (name block, ticket link, status line) before any
+   grill content, so the report actually lands in the transcript.
 
 Marking the ticket done is NOT part of this skill - that happens when the
 resulting work actually ships: `/my-build-full`'s ticket linkage closes it when
