@@ -131,7 +131,6 @@ Pool size is `max_trees`: 6 globally, override per-repo in a `treehouse.toml`.
 |---|---|---|
 | `dotfiles/home/.config/wezterm/wezterm.lua` | yes | one file; `is_windows` branch for font size / decorations / blur |
 | `dotfiles/home/.config/nvim/` | yes | identical on both |
-| `home/AGENTS.md` (skills repo) | yes | global agent instructions (Claude `CLAUDE.md` + Codex `AGENTS.md`); moved to the skills repo 2026-08-03 |
 | `dotfiles/home/.config/herdr/{new,return}-agent.py` | yes | the Shift+C / Shift+X logic; only the interpreter differs (`python3` vs `python`) |
 | `dotfiles/home/.config/treehouse/config.toml` | yes | treehouse reads `~/.config/treehouse/` on **both** OSes, unlike herdr |
 | herdr `config.toml` | no | Mac `dotfiles/.../herdr/`, Windows `PC/herdr-config.toml` - only the `[[keys.command]]` shell block differs (python3/sh vs PowerShell). Keep in sync. Live path differs too: `~/.config/herdr/` on Mac, `%APPDATA%\herdr\` on Windows. |

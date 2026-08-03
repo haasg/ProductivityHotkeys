@@ -68,10 +68,6 @@ in
   home.file.".claude/settings.json".source =
     config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/.claude/settings.json";
 
-  # Global agent instructions moved to the skills repo (2026-08-03): clone
-  # github.com/haasg/skills to ~/repo/skills, or fix this path to where it lives.
-  home.file.".claude/CLAUDE.md".source =
-    config.lib.file.mkOutOfStoreSymlink "${config.home.homeDirectory}/repo/skills/home/AGENTS.md";
-  home.file.".codex/AGENTS.md".source =
-    config.lib.file.mkOutOfStoreSymlink "${config.home.homeDirectory}/repo/skills/home/AGENTS.md";
+  # Global agent instructions (~/.claude/CLAUDE.md, ~/.codex/AGENTS.md) are not managed
+  # here: the skills repo (github.com/haasg/skills) owns the file and its link setup.
 }

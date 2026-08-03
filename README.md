@@ -59,8 +59,7 @@ The Mac is managed declaratively with nix (nix-darwin + home-manager) under
 1. **Everything** - `dotfiles/rebuild.sh` (symlinks the repo to `~/.dotfiles` and
    runs `darwin-rebuild switch`). This installs the CLI tools, starship, WezTerm,
    herdr, treehouse, and Claude Code, and symlinks the shared configs (`wezterm`,
-   `nvim`, `herdr`, `treehouse`, `settings.json`) plus the global agent
-   instructions, which live in the skills repo (`~/repo/skills/home/AGENTS.md`).
+   `nvim`, `herdr`, `treehouse`, `settings.json`).
    treehouse comes from a flake input (it isn't in nixpkgs), so the first rebuild
    after pulling this will update `flake.lock`.
 
