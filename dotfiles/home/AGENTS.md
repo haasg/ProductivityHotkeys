@@ -12,4 +12,15 @@
 - Apply that same high standard to engineering excellence: lint, test failures, and test flakiness.
   If you see one, even if it is not caused by what you are working on right now, still get it fixed.
 
+# simple-english trial (delete this whole block to end the trial)
+
+Write ALL prose with the simple-english rules, in pragmatic mode: chat
+responses, documents, commit messages, PR text. The skill targets technical
+text; for conversation, keep its core (short sentences, active voice, no banned
+modals, no filler) and skip the procedural/descriptive classification. Code,
+identifiers, and quoted output stay exact. On Claude the rules import inline
+below; on other harnesses, read the file at the same path.
+
+@~/.claude/skills/simple-english/SKILL.md
+
 
