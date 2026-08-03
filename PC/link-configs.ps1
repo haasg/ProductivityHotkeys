@@ -26,6 +26,7 @@
 $here = $PSScriptRoot                       # ...\ProductivityHotkeys\PC
 $repo = Split-Path $here -Parent            # ...\ProductivityHotkeys
 $dot  = Join-Path $repo 'dotfiles\home'     # shared (Mac + Windows) config tree
+$skills = 'C:\repo\skills'                  # the shared-skills repo (holds home\AGENTS.md)
 
 # Live path  ->  repo file. Shared rows point into dotfiles\home so Windows reads
 # the exact same file the Mac reads; Windows-only rows point into PC\.
@@ -48,9 +49,10 @@ $links = @(
     # reads ~/.config on Windows too, so this file is shared with the Mac verbatim.
     @{ Link = "$env:USERPROFILE\.config\treehouse\config.toml"; Target = "$dot\.config\treehouse\config.toml" }
 
-    # Global agent instructions - shared verbatim with Mac (Claude reads CLAUDE.md, Codex reads AGENTS.md).
-    @{ Link = "$env:USERPROFILE\.claude\CLAUDE.md";          Target = "$dot\AGENTS.md" }
-    @{ Link = "$env:USERPROFILE\.codex\AGENTS.md";           Target = "$dot\AGENTS.md" }
+    # Global agent instructions - shared verbatim with Mac (Claude reads CLAUDE.md, Codex reads
+    # AGENTS.md). The file lives in the skills repo (moved 2026-08-03), next to the skills it imports.
+    @{ Link = "$env:USERPROFILE\.claude\CLAUDE.md";          Target = "$skills\home\AGENTS.md" }
+    @{ Link = "$env:USERPROFILE\.codex\AGENTS.md";           Target = "$skills\home\AGENTS.md" }
 
     # PowerShell profile (the zsh-equivalent): pwsh loads it from Documents.
     @{ Link = "$env:USERPROFILE\Documents\PowerShell\Microsoft.PowerShell_profile.ps1"; Target = "$here\powershell-profile.ps1" }

@@ -26,7 +26,6 @@ One-page keybind reference (Mac + Windows side by side): **[CHEATSHEET.md](CHEAT
 | `dotfiles/home/.config/herdr/new-agent.py` | `Shift+C`: lease a warm worktree, branch it, start Claude - shared |
 | `dotfiles/home/.config/herdr/return-agent.py` | `Shift+X`: return the worktree to the pool - shared |
 | `dotfiles/home/.config/treehouse/config.toml` | treehouse worktree-pool config, shared (same path on both OSes) |
-| `dotfiles/home/AGENTS.md` | global agent instructions (Claude + Codex), shared |
 | `PC/setup.ps1` | one-script bootstrap for a new Windows machine |
 | `PC/link-configs.ps1` | declares every Windows dotfile symlink (the nix `mkOutOfStoreSymlink` analog) |
 | `PC/herdr-config.toml` | herdr config (Windows) - mirrors the Mac one, PowerShell command block |
@@ -60,7 +59,8 @@ The Mac is managed declaratively with nix (nix-darwin + home-manager) under
 1. **Everything** - `dotfiles/rebuild.sh` (symlinks the repo to `~/.dotfiles` and
    runs `darwin-rebuild switch`). This installs the CLI tools, starship, WezTerm,
    herdr, treehouse, and Claude Code, and symlinks the shared configs (`wezterm`,
-   `nvim`, `herdr`, `treehouse`, `AGENTS.md`, `settings.json`).
+   `nvim`, `herdr`, `treehouse`, `settings.json`) plus the global agent
+   instructions, which live in the skills repo (`~/repo/skills/home/AGENTS.md`).
    treehouse comes from a flake input (it isn't in nixpkgs), so the first rebuild
    after pulling this will update `flake.lock`.
 
